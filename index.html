@@ -92,6 +92,21 @@
                 <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
         );
+        
+        const Menu = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        );
+
+        const Columns = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="7" height="18" rx="1"></rect>
+                <rect x="14" y="3" width="7" height="18" rx="1"></rect>
+            </svg>
+        );
 
         const ChordTransposer = () => {
           const [songs, setSongs] = useState([]);
@@ -109,6 +124,8 @@
           const [showImportModal, setShowImportModal] = useState(false);
           const [importText, setImportText] = useState('');
           const [viewDisplayMode, setViewDisplayMode] = useState('chords');
+          const [columnLayout, setColumnLayout] = useState(1);
+          const [draggedSong, setDraggedSong] = useState(null);
 
           useEffect(() => {
             loadSongs();
@@ -302,6 +319,38 @@
             if (currentSong?.id === songId) {
               setCurrentSong({ ...currentSong, pinned: !currentSong.pinned });
             }
+          };
+
+          const handleDragStart = (e, song) => {
+            setDraggedSong(song);
+            e.dataTransfer.effectAllowed = 'move';
+          };
+
+          const handleDragOver = (e, targetSong) => {
+            e.preventDefault();
+            if (!draggedSong || draggedSong.id === targetSong.id) return;
+            
+            const pinnedSongs = songs.filter(s => s.pinned);
+            const unpinnedSongs = songs.filter(s => !s.pinned);
+            
+            const draggedIndex = pinnedSongs.findIndex(s => s.id === draggedSong.id);
+            const targetIndex = pinnedSongs.findIndex(s => s.id === targetSong.id);
+            
+            if (draggedIndex === -1 || targetIndex === -1) return;
+            
+            const newPinnedSongs = [...pinnedSongs];
+            newPinnedSongs.splice(draggedIndex, 1);
+            newPinnedSongs.splice(targetIndex, 0, draggedSong);
+            
+            const newSongs = [...newPinnedSongs, ...unpinnedSongs];
+            setSongs(newSongs);
+          };
+
+          const handleDragEnd = () => {
+            if (draggedSong) {
+              localStorage.setItem('chordTransposerSongs', JSON.stringify(songs));
+            }
+            setDraggedSong(null);
           };
 
           const isChord = (text) => {
@@ -678,6 +727,11 @@ const copyToClipboard = async () => {
                             className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'numbers' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
                             Show Numbers
                           </button>
+                          <button onClick={() => setColumnLayout(columnLayout === 1 ? 2 : 1)}
+                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50"
+                            title="Toggle columns">
+                            <Columns size={18} />{columnLayout} Col
+                          </button>
                         </div>
                         
                         {viewDisplayMode === 'chords' && (
@@ -698,20 +752,88 @@ const copyToClipboard = async () => {
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-8">
-                    <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap text-lg">
-                      {formatContent(currentSong.content, transposition, viewDisplayMode, currentSong.originalKey).map((line, i) => (
-                        <div key={i} className="leading-relaxed mb-1">
-                          {line.isEmpty ? (<br />) : (
-                            line.parts.map((part, j) => (
-                              <span key={j} className={part.type === 'chord' ? 'font-bold text-black' : 
-                                part.type === 'section' ? 'block text-xl font-bold text-blue-700 mt-4 mb-2' : ''}>
-                                {part.content}
-                              </span>
-                            ))
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    {columnLayout === 2 ? (
+                      <div className="max-w-7xl mx-auto grid grid-cols-2 gap-8 text-sm font-mono">
+                        {(() => {
+                          const formattedLines = formatContent(currentSong.content, transposition, viewDisplayMode, currentSong.originalKey);
+                          const sections = [];
+                          let currentSection = [];
+                          
+                          // Group lines into sections
+                          formattedLines.forEach((line, i) => {
+                            const isSection = line.parts.some(p => p.type === 'section');
+                            if (isSection && currentSection.length > 0) {
+                              sections.push(currentSection);
+                              currentSection = [line];
+                            } else {
+                              currentSection.push(line);
+                            }
+                          });
+                          if (currentSection.length > 0) sections.push(currentSection);
+                          
+                          // Split sections into two columns
+                          const midpoint = Math.ceil(sections.length / 2);
+                          const leftSections = sections.slice(0, midpoint);
+                          const rightSections = sections.slice(midpoint);
+                          
+                          return (
+                            <>
+                              <div className="whitespace-pre-wrap">
+                                {leftSections.map((section, sIdx) => (
+                                  <div key={`left-${sIdx}`}>
+                                    {section.map((line, i) => (
+                                      <div key={i} className="leading-relaxed mb-1">
+                                        {line.isEmpty ? (<br />) : (
+                                          line.parts.map((part, j) => (
+                                            <span key={j} className={part.type === 'chord' ? 'font-bold text-black' : 
+                                              part.type === 'section' ? 'block text-lg font-bold text-blue-700 mt-4 mb-2' : ''}>
+                                              {part.content}
+                                            </span>
+                                          ))
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="whitespace-pre-wrap">
+                                {rightSections.map((section, sIdx) => (
+                                  <div key={`right-${sIdx}`}>
+                                    {section.map((line, i) => (
+                                      <div key={i} className="leading-relaxed mb-1">
+                                        {line.isEmpty ? (<br />) : (
+                                          line.parts.map((part, j) => (
+                                            <span key={j} className={part.type === 'chord' ? 'font-bold text-black' : 
+                                              part.type === 'section' ? 'block text-lg font-bold text-blue-700 mt-4 mb-2' : ''}>
+                                              {part.content}
+                                            </span>
+                                          ))
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap text-lg">
+                        {formatContent(currentSong.content, transposition, viewDisplayMode, currentSong.originalKey).map((line, i) => (
+                          <div key={i} className="leading-relaxed mb-1">
+                            {line.isEmpty ? (<br />) : (
+                              line.parts.map((part, j) => (
+                                <span key={j} className={part.type === 'chord' ? 'font-bold text-black' : 
+                                  part.type === 'section' ? 'block text-xl font-bold text-blue-700 mt-4 mb-2' : ''}>
+                                  {part.content}
+                                </span>
+                              ))
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -749,9 +871,18 @@ const copyToClipboard = async () => {
                         <div className="space-y-2">
                           {filteredSongs.map(song => (
                             <div key={song.id}
+                              draggable={song.pinned}
+                              onDragStart={(e) => song.pinned && handleDragStart(e, song)}
+                              onDragOver={(e) => song.pinned && handleDragOver(e, song)}
+                              onDragEnd={handleDragEnd}
                               className={`p-3 rounded-lg border cursor-pointer hover:bg-gray-50 ${currentSong?.id === song.id ? 'bg-blue-50 border-blue-300' : 'border-gray-200'} ${song.pinned ? 'border-l-4 border-l-yellow-500' : ''}`}
                               onClick={() => loadSong(song)}>
-                              <div className="flex items-start justify-between">
+                              <div className="flex items-start justify-between gap-2">
+                                {song.pinned && (
+                                  <div className="cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
+                                    <Menu size={16} />
+                                  </div>
+                                )}
                                 <div className="flex-1">
                                   <div className="font-medium text-sm flex items-center gap-2">
                                     {song.pinned && <span className="text-yellow-500">📌</span>}
