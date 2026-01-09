@@ -162,6 +162,13 @@
           const [newFolderName, setNewFolderName] = useState('');
           const [showMoveSongModal, setShowMoveSongModal] = useState(false);
           const [songToMove, setSongToMove] = useState(null);
+          const [showImportFolderModal, setShowImportFolderModal] = useState(false);
+          const [importedSongsData, setImportedSongsData] = useState(null);
+          const [importFolderName, setImportFolderName] = useState('');
+          const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+          const [duplicateSongs, setDuplicateSongs] = useState([]);
+          const [selectedFolderForImport, setSelectedFolderForImport] = useState(null);
+          const [showExportModal, setShowExportModal] = useState(false);
           
           const metronomeIntervalRef = React.useRef(null);
           const audioContextRef = React.useRef(null);
@@ -874,15 +881,39 @@ const copyToClipboard = async () => {
           };
 
           const exportAllSongs = () => {
-            const dataStr = JSON.stringify(songs, null, 2);
+            setShowExportModal(true);
+          };
+          
+          const exportSongs = (songsToExport, filename) => {
+            if (songsToExport.length === 0) {
+              alert('No songs to export!');
+              return;
+            }
+            
+            const dataStr = JSON.stringify(songsToExport, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'chord-transposer-songs.json';
+            a.download = filename;
             a.click();
             URL.revokeObjectURL(url);
-            alert('All songs exported! Transfer this file to your other device.');
+            alert(`${songsToExport.length} songs exported!`);
+            setShowExportModal(false);
+          };
+          
+          const exportCurrentFolder = () => {
+            if (selectedFolder === 'all') {
+              exportSongs(songs, 'all-songs.json');
+            } else if (selectedFolder === 'uncategorized') {
+              const uncategorizedSongs = songs.filter(s => !s.folders || s.folders.length === 0);
+              exportSongs(uncategorizedSongs, 'uncategorized-songs.json');
+            } else {
+              const folder = folders.find(f => f.id === selectedFolder);
+              const folderSongs = songs.filter(s => s.folders && s.folders.includes(selectedFolder));
+              const folderName = folder ? folder.name.replace(/[^a-z0-9]/gi, '-').toLowerCase() : 'folder';
+              exportSongs(folderSongs, `${folderName}-songs.json`);
+            }
           };
 
           const importAllSongs = (event) => {
@@ -893,29 +924,9 @@ const copyToClipboard = async () => {
               try {
                 const importedSongs = JSON.parse(e.target.result);
                 if (Array.isArray(importedSongs)) {
-                  // Merge: Add new songs, skip duplicates
-                  const existingSongKeys = new Set(songs.map(s => `${s.title}-${s.originalKey}`));
-                  const newSongs = importedSongs.filter(s => {
-                    const key = `${s.title}-${s.originalKey}`;
-                    return !existingSongKeys.has(key);
-                  });
-                  
-                  // Ensure imported songs have folders array
-                  const songsWithFolders = newSongs.map(s => ({
-                    ...s,
-                    folders: s.folders || []
-                  }));
-                  
-                  const mergedSongs = [...songs, ...songsWithFolders];
-                  setSongs(mergedSongs);
-                  localStorage.setItem('chordTransposerSongs', JSON.stringify(mergedSongs));
-                  
-                  const skipped = importedSongs.length - newSongs.length;
-                  if (skipped > 0) {
-                    alert(`Added ${newSongs.length} songs, Skipped ${skipped} duplicates`);
-                  } else {
-                    alert(`Successfully added ${newSongs.length} songs!`);
-                  }
+                  // Store imported data and show folder selection modal
+                  setImportedSongsData(importedSongs);
+                  setShowImportFolderModal(true);
                 } else {
                   alert('Invalid file format');
                 }
@@ -925,6 +936,204 @@ const copyToClipboard = async () => {
             };
             reader.readAsText(file);
             event.target.value = '';
+          };
+
+          const finishImportWithFolder = (folderId) => {
+            if (!importedSongsData) return;
+            
+            // Auto-create folders from imported songs
+            const importedFolderNames = new Set();
+            importedSongsData.forEach(song => {
+              if (song.folders && Array.isArray(song.folders)) {
+                song.folders.forEach(folderRef => {
+                  // If folderRef is a string (folder name), collect it
+                  if (typeof folderRef === 'string' && folderRef.length > 0) {
+                    importedFolderNames.add(folderRef);
+                  }
+                });
+              }
+            });
+            
+            // Create folders that don't exist
+            const existingFolderNames = new Set(folders.map(f => f.name.toLowerCase()));
+            const foldersToCreate = Array.from(importedFolderNames).filter(
+              name => !existingFolderNames.has(name.toLowerCase())
+            );
+            
+            let updatedFolders = [...folders];
+            const folderNameToId = {};
+            
+            // Map existing folders
+            folders.forEach(f => {
+              folderNameToId[f.name.toLowerCase()] = f.id;
+            });
+            
+            // Create new folders
+            foldersToCreate.forEach(name => {
+              const newFolder = {
+                id: Date.now().toString() + Math.random(),
+                name: name,
+                createdAt: new Date().toISOString()
+              };
+              updatedFolders.push(newFolder);
+              folderNameToId[name.toLowerCase()] = newFolder.id;
+            });
+            
+            if (foldersToCreate.length > 0) {
+              setFolders(updatedFolders);
+              localStorage.setItem('chordTransposerFolders', JSON.stringify(updatedFolders));
+            }
+            
+            // Check for duplicates
+            const existingSongMap = new Map();
+            songs.forEach(s => {
+              existingSongMap.set(`${s.title}-${s.originalKey}`, s);
+            });
+            
+            const duplicates = [];
+            const newSongs = [];
+            
+            importedSongsData.forEach(importedSong => {
+              const key = `${importedSong.title}-${importedSong.originalKey}`;
+              if (existingSongMap.has(key)) {
+                duplicates.push({
+                  imported: importedSong,
+                  existing: existingSongMap.get(key)
+                });
+              } else {
+                newSongs.push(importedSong);
+              }
+            });
+            
+            if (duplicates.length > 0) {
+              // Show duplicate handling modal
+              setDuplicateSongs(duplicates);
+              setSelectedFolderForImport(folderId);
+              setShowImportFolderModal(false);
+              setShowDuplicateModal(true);
+            } else {
+              // No duplicates, proceed with import
+              finishImportNoDuplicates(newSongs, [], folderId, folderNameToId);
+            }
+          };
+
+          const finishImportNoDuplicates = (newSongs, songsToReplace, folderId, folderNameToId) => {
+            // Convert folder names to IDs in imported songs
+            const processedSongs = [...newSongs, ...songsToReplace].map(s => {
+              let folderIds = [];
+              
+              // Add the selected import folder if provided
+              if (folderId) {
+                folderIds.push(folderId);
+              }
+              
+              // Convert folder names from imported song to IDs
+              if (s.folders && Array.isArray(s.folders)) {
+                s.folders.forEach(folderRef => {
+                  if (typeof folderRef === 'string') {
+                    const folderId = folderNameToId[folderRef.toLowerCase()];
+                    if (folderId && !folderIds.includes(folderId)) {
+                      folderIds.push(folderId);
+                    }
+                  } else {
+                    // Already an ID
+                    if (!folderIds.includes(folderRef)) {
+                      folderIds.push(folderRef);
+                    }
+                  }
+                });
+              }
+              
+              return {
+                ...s,
+                folders: folderIds
+              };
+            });
+            
+            // Remove songs that are being replaced
+            const replaceKeys = new Set(songsToReplace.map(s => `${s.title}-${s.originalKey}`));
+            const filteredExisting = songs.filter(s => {
+              const key = `${s.title}-${s.originalKey}`;
+              return !replaceKeys.has(key);
+            });
+            
+            const mergedSongs = [...filteredExisting, ...processedSongs];
+            setSongs(mergedSongs);
+            localStorage.setItem('chordTransposerSongs', JSON.stringify(mergedSongs));
+            
+            const replaced = songsToReplace.length;
+            const added = newSongs.length;
+            
+            let message = '';
+            if (added > 0 && replaced > 0) {
+              message = `Added ${added} new songs, Replaced ${replaced} existing songs`;
+            } else if (added > 0) {
+              message = `Successfully added ${added} songs!`;
+            } else if (replaced > 0) {
+              message = `Replaced ${replaced} songs`;
+            }
+            
+            if (message) alert(message);
+            
+            setImportedSongsData(null);
+            setShowImportFolderModal(false);
+            setImportFolderName('');
+            setShowDuplicateModal(false);
+            setDuplicateSongs([]);
+            setSelectedFolderForImport(null);
+          };
+
+          const handleDuplicateDecision = (replaceAll) => {
+            if (!importedSongsData) return;
+            
+            // Get folder name to ID mapping
+            const folderNameToId = {};
+            folders.forEach(f => {
+              folderNameToId[f.name.toLowerCase()] = f.id;
+            });
+            
+            const existingSongMap = new Map();
+            songs.forEach(s => {
+              existingSongMap.set(`${s.title}-${s.originalKey}`, s);
+            });
+            
+            const newSongs = [];
+            const songsToReplace = [];
+            
+            importedSongsData.forEach(importedSong => {
+              const key = `${importedSong.title}-${importedSong.originalKey}`;
+              if (existingSongMap.has(key)) {
+                if (replaceAll) {
+                  songsToReplace.push(importedSong);
+                }
+                // If not replacing, skip this song
+              } else {
+                newSongs.push(importedSong);
+              }
+            });
+            
+            finishImportNoDuplicates(newSongs, songsToReplace, selectedFolderForImport, folderNameToId);
+          };
+
+          const createFolderAndImport = () => {
+            if (!importFolderName.trim()) {
+              alert('Please enter a folder name');
+              return;
+            }
+            
+            // Create new folder
+            const folder = {
+              id: Date.now().toString(),
+              name: importFolderName.trim(),
+              createdAt: new Date().toISOString()
+            };
+            
+            const updatedFolders = [...folders, folder];
+            setFolders(updatedFolders);
+            localStorage.setItem('chordTransposerFolders', JSON.stringify(updatedFolders));
+            
+            // Import with new folder
+            finishImportWithFolder(folder.id);
           };
 
           const filteredSongs = songs
@@ -1025,6 +1234,156 @@ const copyToClipboard = async () => {
                     <div className="flex gap-2 mt-4">
                       <button onClick={() => { setShowMoveSongModal(false); setSongToMove(null); }}
                         className="flex-1 bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">Done</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {showImportFolderModal && importedSongsData && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                    <h2 className="text-xl font-bold mb-4">Import {importedSongsData.length} Songs</h2>
+                    <p className="text-sm text-gray-600 mb-4">Add these songs to a folder?</p>
+                    
+                    <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
+                      <div 
+                        onClick={() => finishImportWithFolder(null)}
+                        className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                        <div className="flex items-center gap-2">
+                          <FileText size={16} />
+                          <span>No folder (Uncategorized)</span>
+                        </div>
+                      </div>
+                      
+                      {folders.map(folder => (
+                        <div 
+                          key={folder.id}
+                          onClick={() => finishImportWithFolder(folder.id)}
+                          className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                          <div className="flex items-center gap-2">
+                            <Folder size={16} />
+                            <span>{folder.name}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="border-t pt-4">
+                      <p className="text-sm font-medium text-gray-700 mb-2">Or create new folder:</p>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text" 
+                          value={importFolderName}
+                          onChange={(e) => setImportFolderName(e.target.value)}
+                          onKeyPress={(e) => e.key === 'Enter' && createFolderAndImport()}
+                          placeholder="New folder name..."
+                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <button 
+                          onClick={createFolderAndImport}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                          Create & Import
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2 mt-4">
+                      <button onClick={() => { setShowImportFolderModal(false); setImportedSongsData(null); setImportFolderName(''); }}
+                        className="flex-1 bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {showDuplicateModal && duplicateSongs.length > 0 && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+                    <h2 className="text-xl font-bold mb-4">Duplicate Songs Found</h2>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Found {duplicateSongs.length} song(s) that already exist in your library.
+                    </p>
+                    
+                    <div className="bg-gray-50 rounded p-4 mb-4 max-h-48 overflow-y-auto">
+                      <p className="text-sm font-medium mb-2">Duplicates:</p>
+                      {duplicateSongs.slice(0, 5).map((dup, idx) => (
+                        <p key={idx} className="text-sm text-gray-700">• {dup.imported.title} ({dup.imported.originalKey})</p>
+                      ))}
+                      {duplicateSongs.length > 5 && (
+                        <p className="text-sm text-gray-500 mt-1">...and {duplicateSongs.length - 5} more</p>
+                      )}
+                    </div>
+                    
+                    <p className="text-sm text-gray-700 mb-4">What would you like to do?</p>
+                    
+                    <div className="space-y-2">
+                      <button 
+                        onClick={() => handleDuplicateDecision(true)}
+                        className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-left">
+                        <div className="font-medium">Replace Existing Songs</div>
+                        <div className="text-sm text-blue-100">Update with imported versions (newer content)</div>
+                      </button>
+                      
+                      <button 
+                        onClick={() => handleDuplicateDecision(false)}
+                        className="w-full bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 text-left">
+                        <div className="font-medium">Keep Existing Songs</div>
+                        <div className="text-sm text-gray-200">Skip duplicates, only add new songs</div>
+                      </button>
+                      
+                      <button 
+                        onClick={() => {
+                          setShowDuplicateModal(false);
+                          setDuplicateSongs([]);
+                          setImportedSongsData(null);
+                          setSelectedFolderForImport(null);
+                        }}
+                        className="w-full bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+                        Cancel Import
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {showExportModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                    <h2 className="text-xl font-bold mb-4">Export Songs</h2>
+                    <p className="text-sm text-gray-600 mb-4">Choose what to export:</p>
+                    
+                    <div className="space-y-2">
+                      <button 
+                        onClick={() => exportSongs(songs, 'all-songs.json')}
+                        className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-left">
+                        <div className="font-medium">Export All Songs</div>
+                        <div className="text-sm text-blue-100">{songs.length} songs in your library</div>
+                      </button>
+                      
+                      {selectedFolder !== 'all' && (
+                        <button 
+                          onClick={exportCurrentFolder}
+                          className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 text-left">
+                          <div className="font-medium">Export Current Folder</div>
+                          <div className="text-sm text-green-100">
+                            {selectedFolder === 'uncategorized' 
+                              ? `${songs.filter(s => !s.folders || s.folders.length === 0).length} uncategorized songs`
+                              : `"${folders.find(f => f.id === selectedFolder)?.name}" - ${songs.filter(s => s.folders && s.folders.includes(selectedFolder)).length} songs`
+                            }
+                          </div>
+                        </button>
+                      )}
+                      
+                      <button 
+                        onClick={() => setShowExportModal(false)}
+                        className="w-full bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400">
+                        Cancel
+                      </button>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                      <p className="text-xs text-blue-800">
+                        💡 Tip: Export specific folders to share setlists with your band or backup categories separately!
+                      </p>
                     </div>
                   </div>
                 </div>
