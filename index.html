@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ToneBook - Chord Transposer & Song Library</title>
     
-    <!-- Mobile optimization -->
+    <!-- Mobile optimization and icon -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="ToneBook">
@@ -213,34 +213,41 @@
               const possibleChordLine = chordPattern.test(trimmedLine);
               
               if (possibleChordLine) {
-                const chords = trimmedLine.split(/\s+/).filter(c => c.trim());
+                const chords = [];
                 const nextLine = i + 1 < lines.length ? lines[i + 1] : '';
                 
-                if (nextLine.trim()) {
+                // Extract chords with their positions
+                const chordRegex = /[A-G][#b]?(m|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?/g;
+                let match;
+                while ((match = chordRegex.exec(line)) !== null) {
+                  chords.push({ chord: match[0], pos: match.index });
+                }
+                
+                if (nextLine.trim() && chords.length > 0) {
                   let result = '';
-                  let lyricIndex = 0;
-                  const nextLineTrimmed = nextLine;
+                  let lastPos = 0;
                   
-                  chords.forEach((chord) => {
-                    const chordPos = line.indexOf(chord);
-                    
-                    while (lyricIndex < chordPos && lyricIndex < nextLineTrimmed.length) {
-                      result += nextLineTrimmed[lyricIndex];
-                      lyricIndex++;
+                  chords.forEach((item, idx) => {
+                    // Add lyrics from last position to this chord position
+                    if (item.pos >= lastPos) {
+                      const lyricPart = nextLine.substring(lastPos, item.pos);
+                      result += lyricPart;
                     }
                     
-                    result += `[${chord}]`;
+                    // Add the chord
+                    result += `[${item.chord}]`;
+                    lastPos = item.pos;
                   });
                   
-                  while (lyricIndex < nextLineTrimmed.length) {
-                    result += nextLineTrimmed[lyricIndex];
-                    lyricIndex++;
+                  // Add any remaining lyrics
+                  if (lastPos < nextLine.length) {
+                    result += nextLine.substring(lastPos);
                   }
                   
                   parsedContent += result + '\n';
                   i++;
                 } else {
-                  parsedContent += chords.map(c => `[${c}]`).join(' ') + '\n';
+                  parsedContent += chords.map(c => `[${c.chord}]`).join(' ') + '\n';
                 }
               } else {
                 let processedLine = trimmedLine;
@@ -321,7 +328,12 @@
 
           const transposeChord = (chord, semitones) => {
             const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const flatNotes = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
             const flatToSharp = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
+            const sharpToFlat = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
+            
+            // Determine if we should prefer flats based on the original chord
+            const hasFlat = chord.includes('b');
             
             if (chord.includes('/')) {
               const [main, bass] = chord.split('/');
@@ -338,7 +350,15 @@
             if (index === -1) return chord;
             
             const newIndex = (index + semitones + 12) % 12;
-            return notes[newIndex] + suffix;
+            let newRoot = notes[newIndex];
+            
+            // If original had flats or new note is naturally flat-like, use flat notation
+            const flatKeys = ['Db', 'Eb', 'Gb', 'Ab', 'Bb', 'F'];
+            if (hasFlat || flatKeys.includes(chord.slice(0, 2)) || flatKeys.includes(chord.slice(0, 1))) {
+              newRoot = sharpToFlat[newRoot] || newRoot;
+            }
+            
+            return newRoot + suffix;
           };
 
           const getCurrentKey = () => {
@@ -372,16 +392,16 @@
             
             const intervalToNumeral = {
               0: { numeral: 'I', quality: '' },
-              1: { numeral: 'bII', quality: '' },
+              1: { numeral: 'IIb', quality: '' },
               2: { numeral: 'II', quality: 'm' },
-              3: { numeral: 'bIII', quality: '' },
+              3: { numeral: 'IIIb', quality: '' },
               4: { numeral: 'III', quality: 'm' },
               5: { numeral: 'IV', quality: '' },
-              6: { numeral: 'bV', quality: '' },
+              6: { numeral: 'Vb', quality: '' },
               7: { numeral: 'V', quality: '' },
-              8: { numeral: 'bVI', quality: '' },
+              8: { numeral: 'VIb', quality: '' },
               9: { numeral: 'VI', quality: 'm' },
-              10: { numeral: 'bVII', quality: '' },
+              10: { numeral: 'VIIb', quality: '' },
               11: { numeral: 'VII', quality: 'dim' }
             };
             
