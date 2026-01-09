@@ -126,6 +126,12 @@
           const [viewDisplayMode, setViewDisplayMode] = useState('chords');
           const [columnLayout, setColumnLayout] = useState(1);
           const [draggedSong, setDraggedSong] = useState(null);
+          const [metronomeActive, setMetronomeActive] = useState(false);
+          const [metronomeBpm, setMetronomeBpm] = useState(120);
+          const [currentBeat, setCurrentBeat] = useState(0);
+          
+          const metronomeIntervalRef = React.useRef(null);
+          const audioContextRef = React.useRef(null);
 
           useEffect(() => {
             loadSongs();
@@ -353,6 +359,117 @@
             setDraggedSong(null);
           };
 
+          const playMetronomeClick = (isAccent = false) => {
+            if (!audioContextRef.current) {
+              audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            
+            const ctx = audioContextRef.current;
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+            
+            // Accent beat is higher pitch and louder
+            oscillator.frequency.value = isAccent ? 1200 : 800;
+            gainNode.gain.value = isAccent ? 0.3 : 0.15;
+            
+            oscillator.start(ctx.currentTime);
+            oscillator.stop(ctx.currentTime + 0.05);
+          };
+
+          const toggleMetronome = () => {
+            if (metronomeActive) {
+              // Stop metronome
+              if (metronomeIntervalRef.current) {
+                clearInterval(metronomeIntervalRef.current);
+                metronomeIntervalRef.current = null;
+              }
+              setMetronomeActive(false);
+              setCurrentBeat(0);
+            } else {
+              // Start metronome
+              const bpmToUse = metronomeBpm || 120;
+              const interval = (60 / bpmToUse) * 1000; // Convert BPM to milliseconds
+              
+              // Get beats per measure from time signature
+              let beatsPerMeasure = 4;
+              if (currentSong?.timeSignature) {
+                const match = currentSong.timeSignature.match(/^(\d+)/);
+                if (match) beatsPerMeasure = parseInt(match[1]);
+              }
+              
+              let beat = 0;
+              playMetronomeClick(true); // First beat accent
+              setCurrentBeat(1);
+              
+              metronomeIntervalRef.current = setInterval(() => {
+                beat = (beat + 1) % beatsPerMeasure;
+                playMetronomeClick(beat === 0);
+                setCurrentBeat(beat + 1);
+              }, interval);
+              
+              setMetronomeActive(true);
+            }
+          };
+
+          const adjustMetronomeBpm = (change) => {
+            const newBpm = Math.max(40, Math.min(240, metronomeBpm + change));
+            setMetronomeBpm(newBpm);
+            
+            // If metronome is active, restart with new BPM
+            if (metronomeActive) {
+              setMetronomeActive(false);
+              if (metronomeIntervalRef.current) {
+                clearInterval(metronomeIntervalRef.current);
+              }
+              setTimeout(() => {
+                setMetronomeActive(true);
+              }, 100);
+            }
+          };
+
+          // Initialize metronome BPM when song changes
+          React.useEffect(() => {
+            if (currentSong && viewMode) {
+              const songBpm = parseInt(currentSong.bpm) || 120;
+              setMetronomeBpm(songBpm);
+            }
+            
+            // Stop metronome when exiting view mode
+            if (!viewMode && metronomeActive) {
+              if (metronomeIntervalRef.current) {
+                clearInterval(metronomeIntervalRef.current);
+              }
+              setMetronomeActive(false);
+              setCurrentBeat(0);
+            }
+          }, [currentSong, viewMode]);
+
+          // Restart metronome when BPM changes while active
+          React.useEffect(() => {
+            if (metronomeActive && metronomeIntervalRef.current) {
+              clearInterval(metronomeIntervalRef.current);
+              
+              const bpmToUse = metronomeBpm || 120;
+              const interval = (60 / bpmToUse) * 1000;
+              
+              let beatsPerMeasure = 4;
+              if (currentSong?.timeSignature) {
+                const match = currentSong.timeSignature.match(/^(\d+)/);
+                if (match) beatsPerMeasure = parseInt(match[1]);
+              }
+              
+              let beat = 0;
+              metronomeIntervalRef.current = setInterval(() => {
+                beat = (beat + 1) % beatsPerMeasure;
+                playMetronomeClick(beat === 0);
+                setCurrentBeat(beat + 1);
+              }, interval);
+            }
+          }, [metronomeBpm, metronomeActive]);
+
           const isChord = (text) => {
             const chordPattern = /^[A-G][#b]?(m|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?$/;
             return chordPattern.test(text.trim());
@@ -370,18 +487,21 @@
             return firstChord || 'C';
           };
 
-          const transposeChord = (chord, semitones) => {
+          const transposeChord = (chord, semitones, songKey = 'C') => {
             const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
             const flatNotes = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
             const flatToSharp = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
             const sharpToFlat = { 'C#': 'Db', 'D#': 'Eb', 'F#': 'Gb', 'G#': 'Ab', 'A#': 'Bb' };
             
-            // Determine if we should prefer flats based on the original chord
-            const hasFlat = chord.includes('b');
+            // Determine if we should use flats or sharps based on the song key
+            const keyRoot = songKey.replace(/m.*$/, ''); // Remove minor and other suffixes
+            const sharpKeys = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'A#'];
+            const flatKeys = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'];
+            const useFlats = flatKeys.includes(keyRoot);
             
             if (chord.includes('/')) {
               const [main, bass] = chord.split('/');
-              return transposeChord(main, semitones) + '/' + transposeChord(bass, semitones);
+              return transposeChord(main, semitones, songKey) + '/' + transposeChord(bass, semitones, songKey);
             }
             
             const chordMatch = chord.match(/^([A-G][#b]?)(.*)/);
@@ -396,10 +516,9 @@
             const newIndex = (index + semitones + 12) % 12;
             let newRoot = notes[newIndex];
             
-            // If original had flats or new note is naturally flat-like, use flat notation
-            const flatKeys = ['Db', 'Eb', 'Gb', 'Ab', 'Bb', 'F'];
-            if (hasFlat || flatKeys.includes(chord.slice(0, 2)) || flatKeys.includes(chord.slice(0, 1))) {
-              newRoot = sharpToFlat[newRoot] || newRoot;
+            // Use flats if the song key is a flat key, otherwise use sharps
+            if (useFlats && sharpToFlat[newRoot]) {
+              newRoot = sharpToFlat[newRoot];
             }
             
             return newRoot + suffix;
@@ -408,7 +527,7 @@
           const getCurrentKey = () => {
             if (!currentSong) return 'C';
             if (transposition === 0) return currentSong.originalKey;
-            return transposeChord(currentSong.originalKey, transposition);
+            return transposeChord(currentSong.originalKey, transposition, currentSong.originalKey);
           };
 
           const chordToNumeral = (chord, key) => {
@@ -487,7 +606,7 @@
                     const numeral = chordToNumeral(bracketContent, songKey);
                     parts.push({ type: 'chord', content: numeral });
                   } else {
-                    const transposedChord = transposeChord(bracketContent, transpose);
+                    const transposedChord = transposeChord(bracketContent, transpose, songKey);
                     parts.push({ type: 'chord', content: transposedChord });
                   }
                 } else {
@@ -747,6 +866,33 @@ const copyToClipboard = async () => {
                             </div>
                           </div>
                         )}
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm font-medium text-gray-700">Metronome:</span>
+                          <button 
+                            onClick={toggleMetronome}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium ${metronomeActive ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                            {metronomeActive ? '⏸ Stop' : '▶ Play'}
+                          </button>
+                          {metronomeActive && (
+                            <div className="flex items-center gap-1">
+                              {[...Array(parseInt(currentSong?.timeSignature?.match(/^(\d+)/)?.[1] || 4))].map((_, i) => (
+                                <div key={i} className={`w-3 h-3 rounded-full ${i === currentBeat - 1 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm font-medium text-gray-700">BPM:</span>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => adjustMetronomeBpm(-5)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
+                            <span className="w-16 text-center font-medium">{metronomeBpm}</span>
+                            <button onClick={() => adjustMetronomeBpm(5)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
