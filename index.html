@@ -216,7 +216,7 @@
                 const chords = [];
                 const nextLine = i + 1 < lines.length ? lines[i + 1] : '';
                 
-                // Extract chords with their positions
+                // Extract chords with their positions (using original line to preserve spacing)
                 const chordRegex = /[A-G][#b]?(m|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?/g;
                 let match;
                 while ((match = chordRegex.exec(line)) !== null) {
@@ -224,29 +224,24 @@
                 }
                 
                 if (nextLine.trim() && chords.length > 0) {
-                  let result = '';
-                  let lastPos = 0;
+                  // Build the chord line with brackets and proper spacing
+                  let chordLine = '';
                   
-                  chords.forEach((item, idx) => {
-                    // Add lyrics from last position to this chord position
-                    if (item.pos >= lastPos) {
-                      const lyricPart = nextLine.substring(lastPos, item.pos);
-                      result += lyricPart;
+                  chords.forEach((item) => {
+                    // Add spaces to reach the chord position
+                    while (chordLine.length < item.pos) {
+                      chordLine += ' ';
                     }
-                    
-                    // Add the chord
-                    result += `[${item.chord}]`;
-                    lastPos = item.pos;
+                    // Add chord with brackets
+                    chordLine += `[${item.chord}]`;
                   });
                   
-                  // Add any remaining lyrics
-                  if (lastPos < nextLine.length) {
-                    result += nextLine.substring(lastPos);
-                  }
-                  
-                  parsedContent += result + '\n';
-                  i++;
+                  // Add the chord line and lyrics line
+                  parsedContent += chordLine + '\n';
+                  parsedContent += nextLine + '\n';
+                  i++; // Skip the next line since we've already processed it
                 } else {
+                  // Just chords, no lyrics below - put them on one line with brackets
                   parsedContent += chords.map(c => `[${c.chord}]`).join(' ') + '\n';
                 }
               } else {
@@ -260,6 +255,26 @@
                   const sectionMatch = trimmedLine.match(/(?:INTRO|VERSE|CHORUS|BRIDGE|OUTRO|CORO|VERSO|PUENTE|INSTRUMENTAL|PRE-CHORUS|PRE CHORUS|INTERLUDE|SOLO)(?:\s+\d+)?/i);
                   if (sectionMatch) {
                     parsedContent += `[${sectionMatch[0]}]\n`;
+                  } else {
+                    parsedContent += processedLine + '\n';
+                  }
+                } else {
+                  parsedContent += processedLine + '\n';
+                }
+              }
+            }
+            
+            setContent(parsedContent.trim());
+            setShowImportModal(false);
+            setImportText('');
+            alert('Text imported! Chords are now above lyrics with brackets.');
+          };
+            
+            setContent(parsedContent.trim());
+            setShowImportModal(false);
+            setImportText('');
+            alert('Text imported! Please review and adjust the formatting as needed.');
+          };
                   } else {
                     parsedContent += processedLine + '\n';
                   }
