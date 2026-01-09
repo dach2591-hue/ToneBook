@@ -216,14 +216,14 @@
                 const chords = [];
                 const nextLine = i + 1 < lines.length ? lines[i + 1] : '';
                 
-                // Extract chords with their positions (using original line to preserve spacing)
+                // Extract chords with their positions
                 const chordRegex = /[A-G][#b]?(m|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?/g;
                 let match;
                 while ((match = chordRegex.exec(line)) !== null) {
                   chords.push({ chord: match[0], pos: match.index });
                 }
                 
-                if (nextLine.trim() && chords.length > 0) {
+                if (nextLine.trim()) {
                   // Build the chord line with brackets and proper spacing
                   let chordLine = '';
                   
@@ -241,7 +241,7 @@
                   parsedContent += nextLine + '\n';
                   i++; // Skip the next line since we've already processed it
                 } else {
-                  // Just chords, no lyrics below - put them on one line with brackets
+                  // Just chords, no lyrics below
                   parsedContent += chords.map(c => `[${c.chord}]`).join(' ') + '\n';
                 }
               } else {
@@ -255,26 +255,6 @@
                   const sectionMatch = trimmedLine.match(/(?:INTRO|VERSE|CHORUS|BRIDGE|OUTRO|CORO|VERSO|PUENTE|INSTRUMENTAL|PRE-CHORUS|PRE CHORUS|INTERLUDE|SOLO)(?:\s+\d+)?/i);
                   if (sectionMatch) {
                     parsedContent += `[${sectionMatch[0]}]\n`;
-                  } else {
-                    parsedContent += processedLine + '\n';
-                  }
-                } else {
-                  parsedContent += processedLine + '\n';
-                }
-              }
-            }
-            
-            setContent(parsedContent.trim());
-            setShowImportModal(false);
-            setImportText('');
-            alert('Text imported! Chords are now above lyrics with brackets.');
-          };
-            
-            setContent(parsedContent.trim());
-            setShowImportModal(false);
-            setImportText('');
-            alert('Text imported! Please review and adjust the formatting as needed.');
-          };
                   } else {
                     parsedContent += processedLine + '\n';
                   }
