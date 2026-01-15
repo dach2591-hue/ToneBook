@@ -2,6 +2,10 @@
 
 **Your complete worship leader tool for practice and live performance**
 
+## Version 10.2 - Mobile Optimized
+
+This version includes full mobile and tablet responsive design fixes!
+
 ## Features
 
 ### 📚 Song Management
@@ -27,18 +31,24 @@
 - **Font controls** for on-the-fly adjustments
 - Perfect for live worship leading
 
+### 📱 Mobile Responsive (NEW in v10.2!)
+- **Mobile menu** - Sidebar slides in as overlay
+- **Optimized controls** - All buttons properly sized for touch
+- **Adaptive layout** - Stacks vertically on small screens
+- **Centered transport** - Play/pause buttons stay centered
+- Works perfectly on phones and tablets!
+
 ## Quick Start
 
 ### Installation
 
 #### Web Version (Works Everywhere)
-1. Download `tonebook-v10.1.zip`
-2. Extract the files
-3. Open `index.html` in your browser
-4. Start using ToneBook!
+1. Download `tonebook-v10.2.zip` or just use `index.html`
+2. Open `index.html` in your browser
+3. Start using ToneBook!
 
 #### Mac Version
-1. Download `ToneBook-Mac-v10.1.app.zip`
+1. Download `ToneBook-Mac-v10.2.app.zip`
 2. Extract and drag `ToneBook.app` to Applications
 3. Double-click to launch
 4. Opens in Chrome as a standalone app
@@ -81,6 +91,7 @@
 - **⏮** - Previous section
 - **▶/⏸** - Play/Pause auto-advance
 - **⏭** - Next section
+- **Exit Live** - Return to performance mode
 
 ### How Auto-Advance Works
 Each section displays its measure count and duration. The auto-advance timer uses:
@@ -90,6 +101,21 @@ Each section displays its measure count and duration. The auto-advance timer use
 - Repeat count
 
 When a section completes, it automatically advances to the next section!
+
+## Mobile Usage
+
+### On Phones/Tablets
+- **Menu Button** (☰) - Tap to open song library
+- **Sidebar** - Slides in from left, tap outside to close
+- **Performance Mode** - Buttons stack vertically
+- **Live Mode** - Controls optimized for touch
+- **Exit Button** - Always accessible in top-right corner
+
+### Touch Controls
+All buttons are properly sized for touch:
+- Minimum 24px for small controls
+- 32-40px for standard buttons
+- 48px for primary actions (Play button)
 
 ## Song Format
 
@@ -128,16 +154,25 @@ Tu Espíritu está aquí
 - **Compatibility**: Modern browsers (Chrome, Firefox, Safari, Edge)
 - **Offline**: Works completely offline
 - **Data**: Import/Export JSON for backup
+- **Mobile**: Fully responsive on all screen sizes
 
 ## Version History
 
-**v10.1** - Final Release (Current)
+**v10.2** - Mobile Responsive Update (Current)
+- ✅ Full mobile and tablet responsive design
+- ✅ Mobile menu with slide-in sidebar
+- ✅ Optimized button sizes for touch
+- ✅ Performance Mode header stacks on mobile
+- ✅ Live Mode controls properly centered
+- ✅ Exit button positioned correctly on all screens
+- ✅ Improved spacing and layout for small screens
+
+**v10.1** - Final Release
 - Fixed: Performance Mode metronome button display
 - Fixed: Mac app launch script
 - Complete Live Mode with auto-advance
 - Metronome with visual dots and audio
 - Drag & drop to folders
-- All features working perfectly!
 
 **v10.0** - Complete Edition
 - Live Mode with auto-advance
@@ -156,13 +191,29 @@ Tu Espíritu está aquí
 - Make sure browser allows localStorage
 - Try exporting your songs as backup (JSON file)
 
+### Mobile Issues
+- If sidebar doesn't open, make sure JavaScript is enabled
+- If buttons overlap, try refreshing the page
+- Clear browser cache if you see old version
+
 ### Metronome Not Working
 - In Performance Mode: Click "⏵ Play" to start
 - In Live Mode: Automatically ON, press ▶ to play
 
+## Browser Support
+
+Tested and working on:
+- ✅ Chrome Desktop & Mobile
+- ✅ Safari iOS & macOS
+- ✅ Firefox Desktop & Mobile
+- ✅ Edge Desktop
+- ✅ Samsung Internet (Android)
+
 ## Credits
 
 Created for worship leaders who need a reliable, feature-rich tool for both practice and live performance.
+
+Version 10.2 includes comprehensive mobile responsive design improvements.
 
 ## License
 
@@ -171,3 +222,5 @@ Free to use for personal and church use.
 ---
 
 **Enjoy making worship music! 🎵✨**
+
+**Questions or feedback?** Feel free to reach out or open an issue on GitHub!
