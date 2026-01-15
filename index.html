@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Version: v8.3-VERIFIED - Generated: 2026-01-15 07:00:42 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -15,6 +16,37 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Responsive Design for All Devices */
+      @media (max-width: 640px) {
+        /* Phone styles */
+        body { font-size: 14px; }
+        .font-mono { font-size: 1rem !important; }
+        h1 { font-size: 1.5rem !important; }
+        h2 { font-size: 1.25rem !important; }
+      }
+      
+      @media (min-width: 641px) and (max-width: 1024px) {
+        /* Tablet styles */
+        body { font-size: 16px; }
+        .font-mono { font-size: 1.1rem !important; }
+      }
+      
+      @media (min-width: 1920px) {
+        /* Large screen / Projector */
+        body { font-size: 20px; }
+        .font-mono { font-size: 1.4rem !important; }
+        h2 { font-size: 2rem !important; }
+      }
+      
+      @media (min-width: 2560px) {
+        /* Ultra-wide / Large Projector */
+        body { font-size: 24px; }
+        .font-mono { font-size: 1.8rem !important; }
+        h1 { font-size: 3rem !important; }
+        h2 { font-size: 2.5rem !important; }
+      }
+    </style>
 </head>
 <body>
     <div id="root"></div>
@@ -135,6 +167,96 @@
         );
 
         const ChordTransposer = () => {
+
+// Helper to filter out //measures lines
+          const filterMeasureLines = (content) => {
+            if (!content) return content;
+            return content.split('\n')
+              .filter(line => !line.trim().match(/^\/\/\d+\s*(measures?|compases?)/i))
+              .join('\n');
+          };
+          
+          // STEP 1: Parser functions for Live Mode
+          const parseLiveSections = (content) => {
+            try {
+              if (!content) return [];
+              const lines = content.split('\n');
+              const sections = [];
+              let currentSection = null;
+              
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // ONLY match lines that are JUST a section header (nothing else on the line)
+                // This excludes chords like [G] that appear in lyrics
+                const sectionMatch = line.match(/^\[([^\]]+)\]$/);
+                let isSection = false;
+                
+                if (sectionMatch) {
+                  const content = sectionMatch[1].trim();
+                  // Only treat as section if it's long enough or has spaces
+                  // Section names: INTRO, VERSO I, CORO, Instrumental, Final
+                  // NOT sections: G, D, Am, Bm, G/B (chords)
+                  if (content.length >= 4 || content.includes(' ')) {
+                    isSection = true;
+                  }
+                }
+                
+                if (isSection) {
+                  if (currentSection) sections.push(currentSection);
+                  
+                  const fullText = sectionMatch[1];
+                  const repeatMatch = fullText.match(/x(\d+)/i);
+                  const repeatCount = repeatMatch ? parseInt(repeatMatch[1]) : 1;
+                  const sectionName = fullText.replace(/x\d+/i, '').trim();
+                  
+                  currentSection = {
+                    name: sectionName,
+                    repeat: repeatCount,
+                    measures: 8,
+                    content: []
+                  };
+                  
+                  // Check for //8 measures or 8 measures
+                  if (i + 1 < lines.length) {
+                    const nextLine = lines[i + 1].trim();
+                    const commentMatch = nextLine.match(/^\/\/(\d+)\s*(measures?|compases?)/i);
+                    if (commentMatch) {
+                      currentSection.measures = parseInt(commentMatch[1]);
+                      i++;
+                    } else {
+                      const regularMatch = nextLine.match(/^(\d+)\s*(measures?|compases?)/i);
+                      if (regularMatch) {
+                        currentSection.measures = parseInt(regularMatch[1]);
+                      }
+                    }
+                  }
+                } else if (currentSection) {
+                  // Add line to content if it's not a comment
+                  if (!line.startsWith('//')) {
+                    currentSection.content.push(lines[i]);
+                  }
+                }
+              }
+              
+              if (currentSection) sections.push(currentSection);
+              return sections;
+            } catch (err) {
+              console.error('Parser error:', err);
+              return [];
+            }
+          };
+          
+          const calculateSectionDuration = (measures, bpm, timeSignature, repeat = 1) => {
+            try {
+              const beatsPerMeasure = timeSignature ? parseInt(timeSignature.split('/')[0]) : 4;
+              const totalBeats = measures * beatsPerMeasure * repeat; // Multiply by repeat!
+              const beatsPerSecond = bpm / 60;
+              return totalBeats / beatsPerSecond;
+            } catch (err) {
+              return 10;
+            }
+          };
           const [songs, setSongs] = useState([]);
           const [currentSong, setCurrentSong] = useState(null);
           const [editMode, setEditMode] = useState(false);
@@ -169,14 +291,130 @@
           const [duplicateSongs, setDuplicateSongs] = useState([]);
           const [selectedFolderForImport, setSelectedFolderForImport] = useState(null);
           const [showExportModal, setShowExportModal] = useState(false);
+          const [showLiveMode, setShowLiveMode] = useState(false);
+          const [liveSectionIndex, setLiveSectionIndex] = useState(0);
+          const [liveIsPlaying, setLiveIsPlaying] = useState(false);
+          const [liveProgress, setLiveProgress] = useState(0);
+          const [liveFontSize, setLiveFontSize] = useState(130);
+          const [metronomeBeat, setMetronomeBeat] = useState(0);
+          const [metronomeAudioMuted, setMetronomeAudioMuted] = useState(true);
+          const [performanceFontSize, setPerformanceFontSize] = useState(100);
+          const [menuVisible, setMenuVisible] = useState(true);
+          const menuTimeoutRef = React.useRef(null);
           
           const metronomeIntervalRef = React.useRef(null);
           const audioContextRef = React.useRef(null);
 
           useEffect(() => {
             loadSongs();
-          }, []);
+          
+          
 
+          }, []);
+          
+          // AUTO-ADVANCE TIMER FOR LIVE MODE
+          useEffect(() => {
+            if (window.liveTimer) {
+              clearInterval(window.liveTimer);
+            }
+            
+            if (!liveIsPlaying || !currentSong) return;
+            
+            // Parse sections from content
+            const parsedSections = parseLiveSections(currentSong.content);
+            const section = parsedSections[liveSectionIndex];
+            if (!section) return;
+            
+            const bpm = parseInt(currentSong.bpm) || 120;
+            const duration = calculateSectionDuration(
+              section.measures, 
+              bpm, 
+              currentSong.timeSignature || '4/4', 
+              section.repeat
+            );
+            
+            const startTime = Date.now();
+            const startProg = liveProgress;
+            
+            window.liveTimer = setInterval(() => {
+              const elapsed = (Date.now() - startTime) / 1000;
+              const newProg = startProg + ((elapsed / duration) * (100 - startProg));
+              
+              if (newProg >= 100) {
+                clearInterval(window.liveTimer);
+                setLiveProgress(100);
+                console.log('✅ Done!');
+                
+                setTimeout(() => {
+                  const parsedSections = parseLiveSections(currentSong.content);
+                  if (liveSectionIndex < parsedSections.length - 1) {
+                    console.log('⏭ Next section');
+                    setLiveSectionIndex(liveSectionIndex + 1);
+                    setLiveProgress(0);
+                  } else {
+                    console.log('🏁 Finished!');
+                    setLiveIsPlaying(false);
+                  }
+                }, 300);
+              } else {
+                setLiveProgress(newProg);
+              }
+            }, 50);
+            
+            return () => {
+              if (window.liveTimer) clearInterval(window.liveTimer);
+            };
+          }, [liveIsPlaying, liveSectionIndex]);
+
+          // Metronome AUDIO + VISUAL in Live Mode
+          useEffect(() => {
+            if (!liveIsPlaying || !metronomeActive) return;
+            
+            const bpm = parseInt(currentSong?.bpm) || 120;
+            const interval = (60 / bpm) * 1000;
+            const timeSignature = currentSong?.timeSignature || '4/4';
+            const beats = parseInt(timeSignature.split('/')[0]);
+            
+            // Create AudioContext for metronome sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            const playClick = (isFirstBeat) => {
+              if (metronomeAudioMuted) return; // Skip if muted
+              
+              const oscillator = audioContext.createOscillator();
+              const gainNode = audioContext.createGain();
+              
+              oscillator.connect(gainNode);
+              gainNode.connect(audioContext.destination);
+              
+              // First beat of measure is higher pitch
+              oscillator.frequency.value = isFirstBeat ? 1000 : 800;
+              gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+              gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+              
+              oscillator.start(audioContext.currentTime);
+              oscillator.stop(audioContext.currentTime + 0.1);
+            };
+            
+            let beat = 0;
+            
+            // Play first click immediately
+            playClick(true);
+            setMetronomeBeat(0);
+            
+            const timer = setInterval(() => {
+              beat++;
+              const currentBeat = beat % beats;
+              setMetronomeBeat(currentBeat);
+              playClick(currentBeat === 0);
+            }, interval);
+            
+            return () => {
+              clearInterval(timer);
+              audioContext.close();
+            };
+          }, [liveIsPlaying, metronomeActive, currentSong, metronomeAudioMuted]);
+          
           const loadSongs = () => {
             const savedSongs = localStorage.getItem('chordTransposerSongs');
             if (savedSongs) {
@@ -212,12 +450,14 @@
               bpm: bpm.trim(),
               timeSignature: timeSignature.trim(),
               pinned: currentSong?.pinned || false,
+              folders: currentSong?.folders || [],
               createdAt: currentSong?.createdAt || new Date().toISOString()
             };
 
             const updatedSongs = currentSong 
               ? songs.map(s => s.id === song.id ? song : s)
               : [...songs, song];
+            console.log("Saving song with folders:", song.folders);
             
             setSongs(updatedSongs);
             localStorage.setItem('chordTransposerSongs', JSON.stringify(updatedSongs));
@@ -488,15 +728,65 @@
               setMetronomeBpm(songBpm);
             }
             
-            // Stop metronome when exiting view mode
-            if (!viewMode && metronomeActive) {
-              if (metronomeIntervalRef.current) {
-                clearInterval(metronomeIntervalRef.current);
-              }
-              setMetronomeActive(false);
+            // Clear Performance metronome interval when exiting view mode (but keep metronomeActive for Live Mode!)
+            if (!viewMode && metronomeIntervalRef.current) {
+              clearInterval(metronomeIntervalRef.current);
+              metronomeIntervalRef.current = null;
               setCurrentBeat(0);
             }
+            // NOTE: Don't set metronomeActive to false! Live Mode needs it!
           }, [currentSong, viewMode]);
+
+          
+          // Auto-hide menu in view mode
+          React.useEffect(() => {
+            if (!viewMode) {
+              setMenuVisible(true);
+              if (menuTimeoutRef.current) {
+                clearTimeout(menuTimeoutRef.current);
+              }
+              return;
+            }
+
+            const handleActivity = () => {
+              setMenuVisible(true);
+              
+              if (menuTimeoutRef.current) {
+                clearTimeout(menuTimeoutRef.current);
+              }
+              
+              menuTimeoutRef.current = setTimeout(() => {
+                setMenuVisible(false);
+              }, 5000);
+            };
+
+            const handleScroll = () => handleActivity();
+            const handleMouseMove = (e) => {
+              if (e.clientY < 150) {
+                handleActivity();
+              }
+            };
+            const handleTouchStart = (e) => {
+              if (e.touches[0].clientY < 150) {
+                handleActivity();
+              }
+            };
+
+            window.addEventListener('scroll', handleScroll);
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('touchstart', handleTouchStart);
+            
+            handleActivity();
+
+            return () => {
+              window.removeEventListener('scroll', handleScroll);
+              window.removeEventListener('mousemove', handleMouseMove);
+              window.removeEventListener('touchstart', handleTouchStart);
+              if (menuTimeoutRef.current) {
+                clearTimeout(menuTimeoutRef.current);
+              }
+            };
+          }, [viewMode]);
 
           // Restart metronome when BPM changes while active
           React.useEffect(() => {
@@ -793,7 +1083,38 @@ const copyToClipboard = async () => {
                 .section { font-size: 18px; font-weight: bold; color: #1d4ed8; margin-top: 16px; margin-bottom: 8px; display: block; }
                 .line { margin-bottom: 5px; white-space: pre-wrap; font-family: 'Courier New', monospace; }
                 @media print { body { padding: 20px; } }
-              </style></head><body><h1>${currentSong.title}</h1><div class="info">`;
+              </style>    <style>
+      /* Responsive Design for All Devices */
+      @media (max-width: 640px) {
+        /* Phone styles */
+        body { font-size: 14px; }
+        .font-mono { font-size: 1rem !important; }
+        h1 { font-size: 1.5rem !important; }
+        h2 { font-size: 1.25rem !important; }
+      }
+      
+      @media (min-width: 641px) and (max-width: 1024px) {
+        /* Tablet styles */
+        body { font-size: 16px; }
+        .font-mono { font-size: 1.1rem !important; }
+      }
+      
+      @media (min-width: 1920px) {
+        /* Large screen / Projector */
+        body { font-size: 20px; }
+        .font-mono { font-size: 1.4rem !important; }
+        h2 { font-size: 2rem !important; }
+      }
+      
+      @media (min-width: 2560px) {
+        /* Ultra-wide / Large Projector */
+        body { font-size: 24px; }
+        .font-mono { font-size: 1.8rem !important; }
+        h1 { font-size: 3rem !important; }
+        h2 { font-size: 2.5rem !important; }
+      }
+    </style>
+</head><body><h1>${currentSong.title}</h1><div class="info">`;
             
             if (transposition !== 0) {
               htmlContent += `Original: ${currentSong.originalKey}, Current: ${getCurrentKey()}<br>`;
@@ -904,15 +1225,15 @@ const copyToClipboard = async () => {
           
           const exportCurrentFolder = () => {
             if (selectedFolder === 'all') {
-              exportSongs(songs, 'all-songs.json');
+              exportSongs(songs, 'all-songs.tone');
             } else if (selectedFolder === 'uncategorized') {
               const uncategorizedSongs = songs.filter(s => !s.folders || s.folders.length === 0);
-              exportSongs(uncategorizedSongs, 'uncategorized-songs.json');
+              exportSongs(uncategorizedSongs, 'uncategorized-songs.tone');
             } else {
               const folder = folders.find(f => f.id === selectedFolder);
               const folderSongs = songs.filter(s => s.folders && s.folders.includes(selectedFolder));
               const folderName = folder ? folder.name.replace(/[^a-z0-9]/gi, '-').toLowerCase() : 'folder';
-              exportSongs(folderSongs, `${folderName}-songs.json`);
+              exportSongs(folderSongs, `${folderName}-songs.tone`);
             }
           };
 
@@ -1353,7 +1674,7 @@ const copyToClipboard = async () => {
                     
                     <div className="space-y-2">
                       <button 
-                        onClick={() => exportSongs(songs, 'all-songs.json')}
+                        onClick={() => exportSongs(songs, 'all-songs.tone')}
                         className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-left">
                         <div className="font-medium">Export All Songs</div>
                         <div className="text-sm text-blue-100">{songs.length} songs in your library</div>
@@ -1389,9 +1710,16 @@ const copyToClipboard = async () => {
                 </div>
               )}
 
-              {viewMode ? (
+              
+          {viewMode && metronomeActive && !menuVisible && (
+            <div className="fixed top-4 right-4 z-50 bg-black bg-opacity-70 rounded p-2 text-white text-sm flex gap-2 items-center">
+              <span>{metronomeBpm}</span>
+              {[...Array(4)].map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === currentBeat - 1 ? 'bg-green-400' : 'bg-gray-500'}`} />)}
+            </div>
+          )}
+          {viewMode ? (
                 <div className="flex-1 flex flex-col bg-white">
-                  <div className="bg-gray-800 text-white p-4">
+                  <div className={`fixed top-0 left-0 right-0 z-50 bg-gray-800 text-white p-4 transition-all duration-300 ${menuVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
                     <div className="max-w-4xl mx-auto flex items-center justify-between">
                       <div>
                         <h2 className="text-2xl font-bold">{currentSong.title}</h2>
@@ -1402,13 +1730,34 @@ const copyToClipboard = async () => {
                           {currentSong.timeSignature && <span> • {currentSong.timeSignature}</span>}
                         </div>
                       </div>
+                      <button onClick={() => {
+                        if (!showLiveMode) {
+                          // Entering Live Mode - reset to first section
+                          setLiveSectionIndex(0);
+                          setLiveProgress(0);
+                          setLiveIsPlaying(false);
+                          setMetronomeActive(true); // Turn ON for Live Mode
+                        } else {
+                          // Exiting Live Mode
+                          setLiveIsPlaying(false);
+                          setLiveProgress(0);
+                          setMetronomeActive(false);
+                          if (window.liveTimer) {
+                            clearInterval(window.liveTimer);
+                            window.liveTimer = null;
+                          }
+                        }
+                        setShowLiveMode(!showLiveMode);
+                      }} className={`flex items-center gap-2 px-4 py-2 rounded-lg mr-2 ${showLiveMode ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'}`}>
+                        <span className="flex items-center gap-1 font-bold text-xs px-2 py-1 bg-white text-red-600 rounded"><span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span>LIVE</span>
+                      </button>
                       <button onClick={() => setViewMode(false)} className="flex items-center gap-2 bg-white text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-100">
-                        <X size={20} />Exit View
+                        <X size={20} />Exit Performance
                       </button>
                     </div>
                   </div>
 
-                  <div className="bg-gray-100 border-b border-gray-200 p-3">
+                  <div className={`fixed top-0 left-0 right-0 z-40 bg-gray-100 border-b border-gray-200 p-3 transition-all duration-300 ${menuVisible ? 'opacity-100' : 'opacity-0 -translate-y-full pointer-events-none'}`} style={{top: menuVisible ? '80px' : '0'}}>
                     <div className="max-w-4xl mx-auto">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex gap-2">
@@ -1475,11 +1824,177 @@ const copyToClipboard = async () => {
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-8">
-                    {columnLayout === 2 ? (
+                  <div className={`flex-1 overflow-y-auto p-8 transition-all duration-300 ${menuVisible ? 'mt-48' : 'mt-0'}`}>
+                    {showLiveMode ? (
+                      <div className="fixed inset-0 z-50 bg-white flex flex-col">
+                        {/* Exit Live Mode Button */}
+                        <div className="absolute top-4 right-4 z-10">
+                          <button 
+                            onClick={() => {
+                              setLiveIsPlaying(false);
+                              setLiveProgress(0);
+                              setMetronomeActive(false);
+                              if (window.liveTimer) {
+                                clearInterval(window.liveTimer);
+                                window.liveTimer = null;
+                              }
+                              setShowLiveMode(false);
+                            }}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center gap-2">
+                            <X size={20} />
+                            Exit Live
+                          </button>
+                        </div>
+                        
+                        {/* Live Mode Content */}
+                        <div className="h-full flex flex-col">
+                        {(() => {
+                          const sections = parseLiveSections(currentSong?.content || '');
+                          
+                          if (sections.length === 0) {
+                            return (
+                              <div className="flex-1 flex items-center justify-center">
+                                <div className="text-center text-gray-500">
+                                  <p className="text-xl mb-2">No sections found</p>
+                                  <p className="text-sm">Format: [INTRO x2]<br/>//8 measures</p>
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          const section = sections[liveSectionIndex] || sections[0];
+                          const bpm = parseInt(currentSong?.bpm) || metronomeBpm || 120;
+                          const duration = calculateSectionDuration(section.measures, bpm, currentSong?.timeSignature || '4/4', section.repeat);
+                          const nextSection = sections[liveSectionIndex + 1];
+                          
+                          return (
+                            <>
+                              <div className="bg-gray-900 text-white p-3 flex items-center justify-center gap-3 shrink-0 relative">
+                                <div className="absolute left-3 top-3 flex items-center gap-3">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-400">Font:</span>
+                                    <button onClick={() => setLiveFontSize(Math.max(50, liveFontSize - 10))} className="w-7 h-7 bg-gray-700 rounded hover:bg-gray-600 text-sm">-</button>
+                                    <span className="text-xs w-10 text-center">{liveFontSize}%</span>
+                                    <button onClick={() => setLiveFontSize(Math.min(200, liveFontSize + 10))} className="w-7 h-7 bg-gray-700 rounded hover:bg-gray-600 text-sm">+</button>
+                                  </div>
+                                  
+                                  <button 
+                                    onClick={() => {
+                                      setMetronomeActive(!metronomeActive);
+                                    }}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${metronomeActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+                                    title={metronomeActive ? 'Turn metronome OFF' : 'Turn metronome ON'}>
+                                    🎵
+                                    <span className="text-xs">{metronomeActive ? 'ON' : 'OFF'}</span>
+                                  </button>
+                                  
+                                  {metronomeActive && (
+                                    <button 
+                                      onClick={() => setMetronomeAudioMuted(!metronomeAudioMuted)}
+                                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${metronomeAudioMuted ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+                                      title={metronomeAudioMuted ? 'Unmute metronome' : 'Mute metronome'}>
+                                      {metronomeAudioMuted ? '🔇' : '🔊'}
+                                    </button>
+                                  )}
+                                </div>
+                                <button 
+                                  onClick={() => {
+                                    if (liveSectionIndex > 0) {
+                                      setLiveSectionIndex(liveSectionIndex - 1);
+                                      setLiveProgress(0);
+                                      setLiveIsPlaying(false);
+                                    }
+                                  }}
+                                  disabled={liveSectionIndex === 0}
+                                  className="w-12 h-12 bg-gray-700 rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-xl flex items-center justify-center">
+                                  ⏮
+                                </button>
+                                
+                                <button 
+                                  onClick={() => {
+                                    setLiveIsPlaying(!liveIsPlaying);
+                                  }}
+                                  className="w-16 h-16 bg-green-600 rounded-full hover:bg-green-700 text-2xl flex items-center justify-center">
+                                  {liveIsPlaying ? '⏸' : '▶'}
+                                </button>
+                                
+                                <button 
+                                  onClick={() => {
+                                    if (liveSectionIndex < sections.length - 1) {
+                                      setLiveSectionIndex(liveSectionIndex + 1);
+                                      setLiveProgress(0);
+                                      setLiveIsPlaying(false);
+                                    }
+                                  }}
+                                  disabled={liveSectionIndex >= sections.length - 1}
+                                  className="w-12 h-12 bg-gray-700 rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-xl flex items-center justify-center">
+                                  ⏭
+                                </button>
+                              </div>
+                              
+                              <div className="bg-gray-300 h-2 shrink-0">
+                                <div className="bg-green-500 h-full transition-all duration-300" style={{width: liveProgress + '%'}} />
+                              </div>
+                              
+                              <div className="flex-1 overflow-y-auto p-6 pt-4 pb-6 flex justify-center">
+                                <div className="max-w-4xl w-full flex flex-col items-center">
+                                  <div className="text-center mb-6">
+                                    <h1 className="text-5xl md:text-6xl font-bold text-blue-700 mb-2">{section.name}</h1>
+                                    {liveIsPlaying && metronomeActive && (
+                                      <div className="flex justify-center gap-2 mb-2">
+                                        {Array.from({ length: parseInt((currentSong?.timeSignature || '4/4').split('/')[0]) }).map((_, i) => (
+                                          <div key={i} className={`w-3 h-3 rounded-full ${i === metronomeBeat ? 'bg-green-600' : 'bg-gray-400'}`} />
+                                        ))}
+                                      </div>
+                                    )}
+                                    <p className="text-lg md:text-xl text-gray-600">
+                                      {section.measures * section.repeat} {(section.measures * section.repeat) === 1 ? 'measure' : 'measures'}
+                                      {section.repeat > 1 ? ' (' + section.measures + ' × ' + section.repeat + ')' : ''}
+                                      {' • ' + Math.round(duration) + 's'}
+                                    </p>
+                                  </div>
+                                  
+                                  <div style={{fontSize: liveFontSize + '%'}} className={`font-mono whitespace-pre-wrap text-left ${(() => {
+                                      const lines = section.content.length;
+                                      const chars = section.content.join('\n').length;
+                                      // More aggressive sizing for long content
+                                      if (lines > 24 || chars > 800) return 'text-xs md:text-sm';
+                                      if (lines > 18 || chars > 600) return 'text-sm md:text-base';
+                                      if (lines > 12 || chars > 400) return 'text-base md:text-lg';  
+                                      if (lines > 8 || chars > 250) return 'text-lg md:text-xl';
+                                      return 'text-xl md:text-2xl';
+                                    })()}`}>
+                                    {formatContent(section.content.join('\n'), transposition, viewDisplayMode, currentSong.originalKey).map((line, i) => (
+                                      <div key={i} className="leading-relaxed mb-1">
+                                        {line.isEmpty ? <br /> : line.parts.map((part, j) => (
+                                          <span key={j} className={part.type === 'chord' ? 'font-bold text-black' : part.type === 'section' ? 'hidden' : ''}>
+                                            {part.content}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {nextSection && (
+                                <div className="bg-gray-100 p-3 text-center border-t-2 border-gray-300 shrink-0">
+                                  <p className="text-gray-700 text-lg">
+                                    <span className="font-semibold">Next:</span> {nextSection.name}
+                                    {nextSection.repeat > 1 ? ' (×' + nextSection.repeat + ')' : ''}
+                                  </p>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                        </div>
+                      </div>
+                    ) : columnLayout === 2 ? (
                       <div className="max-w-7xl mx-auto grid grid-cols-2 gap-8 text-sm font-mono">
                         {(() => {
-                          const formattedLines = formatContent(currentSong.content, transposition, viewDisplayMode, currentSong.originalKey);
+                          // Filter out //measures lines from display
+                          const formattedLines = formatContent(filterMeasureLines(currentSong.content), transposition, viewDisplayMode, currentSong.originalKey);
                           const sections = [];
                           let currentSection = [];
                           
@@ -1544,7 +2059,7 @@ const copyToClipboard = async () => {
                       </div>
                     ) : (
                       <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap text-lg">
-                        {formatContent(currentSong.content, transposition, viewDisplayMode, currentSong.originalKey).map((line, i) => (
+                        {formatContent(filterMeasureLines(currentSong.content), transposition, viewDisplayMode, currentSong.originalKey).map((line, i) => (
                           <div key={i} className="leading-relaxed mb-1">
                             {line.isEmpty ? (<br />) : (
                               line.parts.map((part, j) => (
@@ -1577,7 +2092,7 @@ const copyToClipboard = async () => {
                           <Download size={18} />Export All Songs
                         </button>
                         <label className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 cursor-pointer text-sm">
-                          <input type="file" accept=".json" onChange={importAllSongs} className="hidden" />
+                          <input type="file" accept=".tone" onChange={importAllSongs} className="hidden" />
                           <Plus size={18} />Import Songs
                         </label>
                       </div>
@@ -1610,7 +2125,37 @@ const copyToClipboard = async () => {
                             const folderSongs = songs.filter(s => s.folders && s.folders.includes(folder.id));
                             return (
                               <div key={folder.id}>
-                                <div className={`px-3 py-2 rounded cursor-pointer flex items-center gap-2 ${selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}>
+                                <div 
+                                  onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.currentTarget.style.backgroundColor = '#DBEAFE';
+                                  }}
+                                  onDragLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '';
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.currentTarget.style.backgroundColor = '';
+                                    const songId = e.dataTransfer.getData('songId');
+                                    console.log('📁 DROP on folder:', folder.name, 'songId:', songId);
+                                    if (songId) {
+                                      const updatedSongs = songs.map(s => {
+                                        if (s.id === songId) {
+                                          const folders = s.folders || [];
+                                          if (!folders.includes(folder.id)) {
+                                            console.log('📁 Adding song to folder');
+                                            return { ...s, folders: [...folders, folder.id] };
+                                          }
+                                        }
+                                        return s;
+                                      });
+                                      setSongs(updatedSongs);
+                                      localStorage.setItem('chordTransposerSongs', JSON.stringify(updatedSongs));
+                                    }
+                                  }}
+                                  className={`px-3 py-2 rounded cursor-pointer flex items-center gap-2 ${selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}>
                                   <button onClick={(e) => { e.stopPropagation(); toggleFolderCollapse(folder.id); }} className="hover:text-gray-600">
                                     {collapsedFolders[folder.id] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                                   </button>
@@ -1643,10 +2188,23 @@ const copyToClipboard = async () => {
                           <div className="space-y-2">
                             {filteredSongs.map(song => (
                               <div key={song.id}
-                                draggable={song.pinned}
-                                onDragStart={(e) => song.pinned && handleDragStart(e, song)}
+                                draggable="true"
+                                onDragStart={(e) => {
+                                  if (song.pinned) {
+                                    handleDragStart(e, song);
+                                  } else {
+                                    // For folder drag & drop
+                                    console.log('🎵 DRAG START:', song.title, 'ID:', song.id);
+                                    e.dataTransfer.setData('songId', song.id);
+                                    e.dataTransfer.effectAllowed = 'copy';
+                                    e.currentTarget.style.opacity = '0.5';
+                                  }
+                                }}
                                 onDragOver={(e) => song.pinned && handleDragOver(e, song)}
-                                onDragEnd={handleDragEnd}
+                                onDragEnd={(e) => {
+                                  handleDragEnd(e);
+                                  e.currentTarget.style.opacity = '1';
+                                }}
                                 className={`p-3 rounded-lg border cursor-pointer hover:bg-gray-50 ${currentSong?.id === song.id ? 'bg-blue-50 border-blue-300' : 'border-gray-200'} ${song.pinned ? 'border-l-4 border-l-yellow-500' : ''}`}
                                 onClick={() => loadSong(song)}>
                                 <div className="flex items-start justify-between gap-2">
@@ -1763,7 +2321,7 @@ const copyToClipboard = async () => {
                                 <Edit size={20} />Edit
                               </button>
                               <button onClick={() => setViewMode(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                                <Music size={20} />View
+                                <Music size={20} />Performance
                               </button>
                             </div>
                           </div>
@@ -1799,7 +2357,7 @@ const copyToClipboard = async () => {
 
                         <div className="flex-1 overflow-y-auto p-8 bg-white">
                           <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap">
-                            {formatContent(currentSong.content, transposition).map((line, i) => (
+                            {formatContent(filterMeasureLines(currentSong.content), transposition).map((line, i) => (
                               <div key={i} className="leading-relaxed">
                                 {line.isEmpty ? (<br />) : (
                                   line.parts.map((part, j) => (
