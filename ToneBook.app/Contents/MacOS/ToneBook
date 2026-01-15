@@ -1,0 +1,20 @@
+#!/bin/bash
+# Get the directory where this script is located
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+RESOURCES_DIR="$DIR/../Resources"
+
+# Launch Chrome in app mode with the HTML file
+if [ -f "$RESOURCES_DIR/index.html" ]; then
+    # Try to find Chrome in common locations
+    if [ -f "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" ]; then
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --app="file://$RESOURCES_DIR/index.html" --window-size=1400,900
+    elif [ -f "/usr/bin/google-chrome" ]; then
+        /usr/bin/google-chrome --app="file://$RESOURCES_DIR/index.html" --window-size=1400,900
+    else
+        # Fallback to default browser
+        open "$RESOURCES_DIR/index.html"
+    fi
+else
+    echo "Error: index.html not found in Resources directory"
+    exit 1
+fi
