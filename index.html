@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.4-ALL-FIXES - Generated: 2026-01-16 03:00:00 -->
+<!-- Version: v10.5-FINAL-ALL-WORKING - Generated: 2026-01-16 04:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2188,7 +2188,7 @@ const copyToClipboard = async () => {
                         </div>
                       </div>
                     ) : columnLayout === 2 ? (
-                      <div className="max-w-7xl mx-auto grid grid-cols-2 gap-8 text-sm font-mono" style={{fontSize: `${performanceFontSize}%`}}>
+                      <div className="max-w-7xl mx-auto grid grid-cols-2 gap-8 font-mono" style={{fontSize: `${performanceFontSize}%`}}>
                         {(() => {
                           // Filter out //measures lines from display
                           const formattedLines = formatContent(filterMeasureLines(currentSong.content), transposition, viewDisplayMode, currentSong.originalKey);
@@ -2207,18 +2207,29 @@ const copyToClipboard = async () => {
                           });
                           if (currentSection.length > 0) sections.push(currentSection);
                           
-                          // Balance sections by total line count, not section count
-                          const totalLines = sections.reduce((sum, sec) => sum + sec.length, 0);
-                          const targetLines = Math.ceil(totalLines / 2);
+                          // Balance sections by CHARACTER COUNT for more visual balance
+                          // Calculate total characters in each section
+                          const sectionsWithWeights = sections.map(section => {
+                            const charCount = section.reduce((sum, line) => {
+                              const lineText = line.parts.map(p => p.content).join('');
+                              // Weight section headers more (they're visually larger)
+                              const isSection = line.parts.some(p => p.type === 'section');
+                              return sum + lineText.length * (isSection ? 1.5 : 1);
+                            }, 0);
+                            return { section, weight: charCount };
+                          });
+                          
+                          const totalWeight = sectionsWithWeights.reduce((sum, s) => sum + s.weight, 0);
+                          const targetWeight = totalWeight / 2;
                           
                           const leftSections = [];
                           const rightSections = [];
-                          let leftLines = 0;
+                          let leftWeight = 0;
                           
-                          sections.forEach(section => {
-                            if (leftLines < targetLines) {
+                          sectionsWithWeights.forEach(({ section, weight }) => {
+                            if (leftWeight < targetWeight) {
                               leftSections.push(section);
-                              leftLines += section.length;
+                              leftWeight += weight;
                             } else {
                               rightSections.push(section);
                             }
@@ -2234,7 +2245,7 @@ const copyToClipboard = async () => {
                                         {line.isEmpty ? (<br />) : (
                                           line.parts.map((part, j) => (
                                             <span key={j} className={part.type === 'chord' ? 'font-bold text-black' : 
-                                              part.type === 'section' ? 'block text-lg font-bold text-blue-700 mt-4 mb-2' : ''}>
+                                              part.type === 'section' ? 'block font-bold text-blue-700 mt-4 mb-2' : ''} style={part.type === 'section' ? {fontSize: '1.3em'} : {}}>
                                               {part.content}
                                             </span>
                                           ))
@@ -2252,7 +2263,7 @@ const copyToClipboard = async () => {
                                         {line.isEmpty ? (<br />) : (
                                           line.parts.map((part, j) => (
                                             <span key={j} className={part.type === 'chord' ? 'font-bold text-black' : 
-                                              part.type === 'section' ? 'block text-lg font-bold text-blue-700 mt-4 mb-2' : ''}>
+                                              part.type === 'section' ? 'block font-bold text-blue-700 mt-4 mb-2' : ''} style={part.type === 'section' ? {fontSize: '1.3em'} : {}}>
                                               {part.content}
                                             </span>
                                           ))
@@ -2267,13 +2278,13 @@ const copyToClipboard = async () => {
                         })()}
                       </div>
                     ) : (
-                      <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap text-lg" style={{fontSize: `${performanceFontSize}%`}}>
+                      <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap" style={{fontSize: `${performanceFontSize}%`}}>
                         {formatContent(filterMeasureLines(currentSong.content), transposition, viewDisplayMode, currentSong.originalKey).map((line, i) => (
                           <div key={i} className="leading-relaxed mb-1">
                             {line.isEmpty ? (<br />) : (
                               line.parts.map((part, j) => (
                                 <span key={j} className={part.type === 'chord' ? 'font-bold text-black' : 
-                                  part.type === 'section' ? 'block text-xl font-bold text-blue-700 mt-4 mb-2' : ''}>
+                                  part.type === 'section' ? 'block font-bold text-blue-700 mt-4 mb-2' : ''} style={part.type === 'section' ? {fontSize: '1.3em'} : {}}>
                                   {part.content}
                                 </span>
                               ))
@@ -2456,14 +2467,16 @@ const copyToClipboard = async () => {
                   </div>
 
                   <div className="flex-1 flex flex-col">
-                    {/* Mobile Menu Button - Only visible on mobile */}
-                    <button 
-                      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                      className="md:hidden fixed top-4 left-4 z-50 bg-blue-600 text-white p-3 rounded-lg shadow-lg hover:bg-blue-700"
-                      aria-label="Toggle menu"
-                    >
-                      <Menu size={24} />
-                    </button>
+                    {/* Mobile Menu Button - Only visible on mobile AND when not in Performance/Live mode */}
+                    {!viewMode && !showLiveMode && (
+                      <button 
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className="md:hidden fixed top-4 left-4 z-50 bg-blue-600 text-white p-3 rounded-lg shadow-lg hover:bg-blue-700"
+                        aria-label="Toggle menu"
+                      >
+                        <Menu size={24} />
+                      </button>
+                    )}
                     
                     {!currentSong && !showNewSong ? (
                       <div className="flex-1 flex items-center justify-center text-gray-400">
