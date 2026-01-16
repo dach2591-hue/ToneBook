@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v8.3-VERIFIED - Generated: 2026-01-15 07:00:42 -->
+<!-- Version: v10.3-MOBILE-FIXED - Generated: 2026-01-16 02:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -493,6 +493,7 @@
             setShowNewSong(false);
             setViewMode(false);
             setViewDisplayMode('chords');
+            setMobileMenuOpen(false); // Close mobile menu when song is selected
           };
 
           const startNewSong = () => {
@@ -2003,6 +2004,13 @@ const copyToClipboard = async () => {
                             <span className="w-16 text-center font-medium">{metronomeBpm}</span>
                             <button onClick={() => adjustMetronomeBpm(5)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
                           </div>
+                          
+                          <span className="text-sm font-medium text-gray-700 ml-4">Font:</span>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => setPerformanceFontSize(Math.max(50, performanceFontSize - 10))} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
+                            <span className="w-16 text-center font-medium text-sm">{performanceFontSize}%</span>
+                            <button onClick={() => setPerformanceFontSize(Math.min(200, performanceFontSize + 10))} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -2172,7 +2180,7 @@ const copyToClipboard = async () => {
                         </div>
                       </div>
                     ) : columnLayout === 2 ? (
-                      <div className="max-w-7xl mx-auto grid grid-cols-2 gap-8 text-sm font-mono">
+                      <div className="max-w-7xl mx-auto grid grid-cols-2 gap-8 text-sm font-mono" style={{fontSize: `${performanceFontSize}%`}}>
                         {(() => {
                           // Filter out //measures lines from display
                           const formattedLines = formatContent(filterMeasureLines(currentSong.content), transposition, viewDisplayMode, currentSong.originalKey);
@@ -2191,10 +2199,22 @@ const copyToClipboard = async () => {
                           });
                           if (currentSection.length > 0) sections.push(currentSection);
                           
-                          // Split sections into two columns
-                          const midpoint = Math.ceil(sections.length / 2);
-                          const leftSections = sections.slice(0, midpoint);
-                          const rightSections = sections.slice(midpoint);
+                          // Balance sections by total line count, not section count
+                          const totalLines = sections.reduce((sum, sec) => sum + sec.length, 0);
+                          const targetLines = Math.ceil(totalLines / 2);
+                          
+                          const leftSections = [];
+                          const rightSections = [];
+                          let leftLines = 0;
+                          
+                          sections.forEach(section => {
+                            if (leftLines < targetLines) {
+                              leftSections.push(section);
+                              leftLines += section.length;
+                            } else {
+                              rightSections.push(section);
+                            }
+                          });
                           
                           return (
                             <>
@@ -2239,7 +2259,7 @@ const copyToClipboard = async () => {
                         })()}
                       </div>
                     ) : (
-                      <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap text-lg">
+                      <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap text-lg" style={{fontSize: `${performanceFontSize}%`}}>
                         {formatContent(filterMeasureLines(currentSong.content), transposition, viewDisplayMode, currentSong.originalKey).map((line, i) => (
                           <div key={i} className="leading-relaxed mb-1">
                             {line.isEmpty ? (<br />) : (
