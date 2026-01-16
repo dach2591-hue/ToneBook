@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.7-SIDEBAR-FIXED - Generated: 2026-01-16 06:00:00 -->
+<!-- Version: v10.8-CLOSE-BUTTON-IN-SIDEBAR - Generated: 2026-01-16 07:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2300,9 +2300,19 @@ const copyToClipboard = async () => {
                   {/* Sidebar - Responsive: desktop always visible, mobile hidden until hamburger clicked */}
                   <div className={`sidebar-container w-80 bg-white border-r border-gray-200 flex-col md:flex ${mobileMenuOpen ? 'mobile-open flex' : 'hidden md:flex'}`}>
                     <div className="p-4 border-b border-gray-200">
-                      <div className="flex items-center gap-2 mb-4">
-                        <Music className="text-blue-600" size={24} />
-                        <h1 className="text-xl font-bold">Song Library</h1>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <Music className="text-blue-600" size={24} />
+                          <h1 className="text-xl font-bold">Song Library</h1>
+                        </div>
+                        {/* Close button - only visible on mobile */}
+                        <button 
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="md:hidden p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                          aria-label="Close menu"
+                        >
+                          <X size={24} />
+                        </button>
                       </div>
                       <button onClick={startNewSong} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
                         <Plus size={20} />New Song
