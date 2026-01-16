@@ -1,223 +1,170 @@
-# ToneBook v10.6 - THE REAL FIX ✅
+# ToneBook v10.7 - SIDEBAR ACTUALLY HIDDEN NOW ✅
 
-## What Was Actually Wrong
+## The Problem
 
-I found the ROOT CAUSE of all the issues:
+The sidebar (Song Library, Folders, Songs list) was **always visible on mobile**, taking up the whole screen. The hamburger button was floating because the sidebar was already shown!
 
-### 🔴 Problem: CSS `!important` Overriding Everything
+## Why It Happened
 
-The CSS had `!important` declarations that were overriding ALL inline styles:
+The CSS had `transform: translateX(-100%)` to hide it, but Tailwind's `flex` class was keeping it in the layout flow. The sidebar was hidden OFF-SCREEN to the left, but still taking up space.
 
-```css
-@media (max-width: 768px) {
-  .font-mono { font-size: 0.95rem !important; }  /* ← BLOCKS inline styles! */
-}
+## The Fix
+
+Changed the sidebar classes to use Tailwind's display utilities:
+
+**Before**:
+```html
+<div className="sidebar-container ... flex flex-col">
+```
+- Always had `flex` class
+- CSS tried to hide with transform
+- But it still existed in the layout
+
+**After**:
+```html
+<div className="sidebar-container ... flex-col 
+  ${mobileMenuOpen ? 'mobile-open flex' : 'hidden md:flex'}">
 ```
 
-This meant:
-- ❌ Font controls didn't work (CSS overrode inline fontSize)
-- ❌ Everything was broken on mobile/tablet
+**Mobile (≤ 768px)**:
+- Default: `hidden` (completely gone, not in layout)
+- When hamburger clicked: `flex` (appears)
+
+**Desktop (≥ 768px)**:
+- Always: `md:flex` (always visible)
+- No hamburger button
 
 ---
 
-## ✅ Fixes Applied in v10.6
+## How It Works Now
 
-### Fix 1: Removed ALL `!important` from Font Sizes
-**Changed in lines 20-48, 1096-1101**:
+### Mobile Experience:
 
-```diff
-- .font-mono { font-size: 0.95rem !important; }
-- h1 { font-size: 1.5rem !important; }
-- h2 { font-size: 1.25rem !important; }
-+ /* Removed !important so inline fontSize styles work */
-+ h1 { font-size: 1.5rem; }
-+ h2 { font-size: 1.25rem; }
-```
+**1. Page Loads**:
+- Sidebar: HIDDEN (not in layout at all)
+- Hamburger button (☰): VISIBLE in top-left
+- Content: Full width
 
-**Result**: Font controls now work on ALL devices (phone, tablet, desktop)
+**2. Tap Hamburger**:
+- Sidebar: Slides in from left
+- Backdrop: Dark overlay appears
+- Hamburger button: Hidden (because sidebar is open)
 
----
+**3. Tap a Song**:
+- Sidebar: Slides out (hidden again)
+- Song: Appears full width
+- Hamburger button: Reappears
 
-### Fix 2: Hamburger Button Logic Improved
-**Changed in line 2471-2478**:
-
-```diff
-- {!viewMode && !showLiveMode && (
-+ {!viewMode && !showLiveMode && !mobileMenuOpen && (
-     <button 
--       onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-+       onClick={() => setMobileMenuOpen(true)}
-```
-
-**Changes**:
-- Only shows when sidebar is CLOSED (`!mobileMenuOpen`)
-- Changed from toggle to explicit `true` (clearer intent)
-- Hides automatically when sidebar opens
-
-**Result**: 
-- Hamburger visible when sidebar closed ✓
-- Hamburger hidden when sidebar open ✓
-- No "floating" button confusion ✓
+**4. Tap Backdrop**:
+- Sidebar: Closes
+- Back to step 1
 
 ---
 
-### Fix 3: Column Balance Algorithm (Already in v10.5)
-Uses character count instead of line count for better visual balance.
-
----
-
-## Upload to GitHub
+## Upload and Test
 
 ```bash
 git add index.html
-git commit -m "v10.6: Fix CSS !important blocking font controls"
+git commit -m "v10.7: Actually hide sidebar on mobile"
 git push
 ```
 
-**Wait 2 minutes**, then clear cache and test!
+Wait 2 minutes, then test:
+
+### Test Checklist:
+
+**On Mobile** (phone screen):
+1. Page loads
+   - ✓ No sidebar visible
+   - ✓ Hamburger (☰) in top-left
+   - ✓ "Select a song" message full width
+
+2. Tap hamburger
+   - ✓ Sidebar slides in from left
+   - ✓ Dark backdrop appears
+   - ✓ Hamburger button disappears
+
+3. Tap a song
+   - ✓ Sidebar closes
+   - ✓ Song appears
+   - ✓ Hamburger reappears
+
+4. Tap hamburger again
+   - ✓ Sidebar opens
+
+5. Tap dark backdrop (outside sidebar)
+   - ✓ Sidebar closes
+
+**On Desktop**:
+1. Page loads
+   - ✓ Sidebar always visible on left
+   - ✓ No hamburger button
+   - ✓ Content on right
 
 ---
 
-## Testing Instructions
+## What Changed
 
-### ⚠️ CRITICAL: Clear Cache First
+**File**: index.html, Line 2301
 
-The old CSS is probably cached. You MUST clear it:
-
-**iOS Safari**:
-1. Go to: https://dach2591-hue.github.io/ToneBook/
-2. Settings → Safari → Advanced → Website Data
-3. Find "dach2591-hue.github.io" → Swipe left → Delete
-4. Close Safari completely (swipe up in app switcher)
-5. Reopen and load site
-
-**Android Chrome**:
-1. Menu → History → Clear browsing data
-2. Select "Cached images and files"
-3. Clear data
-4. Close Chrome completely
-5. Reopen and load site
-
----
-
-## Test 1: Font Controls on Mobile 📱
-
-1. Open any song on your phone
-2. Enter Performance Mode
-3. Look for "Font: - 100% +"
-4. **Click + button**
-5. **Expected**: Text gets BIGGER immediately
-6. **Click - button**
-7. **Expected**: Text gets SMALLER immediately
-
-**If it doesn't work**: CSS is still cached, clear cache again
-
----
-
-## Test 2: Hamburger Button
-
-**When you first open the app**:
-1. You see "Select a song or create a new one"
-2. Hamburger button (☰) visible in top-left
-3. **Tap hamburger** → Sidebar slides in from left
-4. **Tap a song** → Sidebar closes, song appears
-5. Hamburger button reappears
-
-**Expected behavior**:
-- ✓ Hamburger shows when sidebar closed
-- ✓ Hamburger hides when sidebar open
-- ✓ Tapping backdrop closes sidebar
-- ✓ Selecting song closes sidebar
-
----
-
-## Test 3: Two-Column Balance
-
-1. Open a song in Performance Mode
-2. Click "2 Col" button
-3. **Expected**: 
-   - Both columns approximately same height
-   - Much better than before (not 2x difference)
-   - May not be pixel-perfect, but should be close
-
-**Note**: Balance depends on:
-- How long each section is
-- How many chords vs lyrics
-- Screen width
-
-Try different songs to see the improvement.
-
----
-
-## What Should Work Now
-
-### ✅ Font Controls
-- Phone: Works ✓
-- Tablet: Works ✓
-- Desktop: Works ✓
-- Performance Mode: Works ✓
-- Live Mode: Works ✓
-
-### ✅ Hamburger Menu
-- Shows when sidebar closed ✓
-- Hides when sidebar open ✓
-- Opens sidebar on tap ✓
-- Closes on song select ✓
-
-### ✅ Column Balance
-- Better algorithm (character-based) ✓
-- ~50/50 balance ✓
-- Sections stay complete ✓
-
----
-
-## If STILL Not Working
-
-If after clearing cache completely it STILL doesn't work:
-
-### Check Version Number:
-1. Right-click → View Page Source
-2. Line 2 should say: `<!-- Version: v10.6-CSS-FIXED -->`
-3. If it says v10.5 or older → GitHub Pages hasn't updated yet, wait 5 minutes
-
-### Check in Browser Console:
-1. Open site on mobile
-2. Tap to bring up browser menu
-3. View → Developer → JavaScript Console
-4. Look for errors (red text)
-5. Take screenshot and send to me
-
-### Try Different Browser:
-- If using Safari → Try Chrome
-- If using Chrome → Try Safari
-- This confirms if it's a browser-specific issue
-
----
-
-## Why It Was Broken
-
-The `!important` CSS declarations meant:
-
+**Before**:
 ```javascript
-// Your code tried to do this:
-<div style={{fontSize: '120%'}}>Content</div>
-
-// But CSS said:
-.font-mono { font-size: 0.95rem !important; }  // ← Wins!
-
-// So the browser ignored your inline style
+className="sidebar-container w-80 bg-white border-r border-gray-200 flex flex-col"
 ```
 
-Now with `!important` removed, inline styles work correctly.
+**After**:
+```javascript
+className="sidebar-container w-80 bg-white border-r border-gray-200 flex-col 
+  ${mobileMenuOpen ? 'mobile-open flex' : 'hidden md:flex'}"
+```
+
+**Key Changes**:
+- Removed base `flex` class
+- Added conditional: `hidden` by default on mobile
+- Added `flex` when `mobileMenuOpen` is true
+- Added `md:flex` to always show on desktop
 
 ---
 
-## Version Summary
+## Why This Works
 
-- **v10.4**: Fixed Live Mode layout
-- **v10.5**: Fixed font controls, column balance, hamburger (but CSS blocked it)
-- **v10.6**: **Removed CSS `!important`** ← THE KEY FIX
+**Tailwind Classes**:
+- `hidden` = `display: none` (element removed from layout)
+- `flex` = `display: flex` (element in layout)
+- `md:flex` = `display: flex` on screens ≥ 768px
+
+**Mobile**:
+```
+Default: hidden (sidebar doesn't exist)
+Opened:  flex (sidebar appears)
+```
+
+**Desktop**:
+```
+Always: md:flex (sidebar always there)
+```
 
 ---
 
+## CSS vs Tailwind
+
+**Old approach** (v10.6 and before):
+- Used CSS `transform: translateX(-100%)`
+- Sidebar still in layout, just moved off-screen
+- Could cause spacing issues
+
+**New approach** (v10.7):
+- Uses Tailwind `hidden` / `flex`
+- Sidebar completely removed from layout when closed
+- Clean, simple, no side effects
+
+---
+
+## If It Still Doesn't Work
+
+1. **Check version**: Should say `v10.7-SIDEBAR-FIXED`
+2. **Clear cache**: Force reload in browser
+3. **Check screen size**: Must be ≤ 768px to see mobile view
+4. **Check console**: F12 → Console → Look for errors
+5. **Try Incognito**: New tab without cache
 
