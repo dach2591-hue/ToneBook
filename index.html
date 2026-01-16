@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.3-MOBILE-FIXED - Generated: 2026-01-16 02:00:00 -->
+<!-- Version: v10.4-ALL-FIXES - Generated: 2026-01-16 03:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1196,16 +1196,6 @@ const copyToClipboard = async () => {
           align-items: center !important;
         }
         
-        /* Exit button positioning - mobile: absolute, desktop: flex item */
-        .live-mode-exit {
-          position: absolute !important;
-          top: 0.5rem !important;
-          right: 0.5rem !important;
-          z-index: 10 !important;
-          padding: 0.5rem 0.75rem !important;
-          font-size: 0.75rem !important;
-        }
-        
         /* Song info in Performance/Live headers */
         .song-info-mobile h2 {
           font-size: 1.125rem !important;
@@ -1944,44 +1934,43 @@ const copyToClipboard = async () => {
 
                   <div className={`fixed top-0 left-0 right-0 z-40 bg-gray-100 border-b border-gray-200 p-3 transition-all duration-300 ${menuVisible ? 'opacity-100' : 'opacity-0 -translate-y-full pointer-events-none'}`} style={{top: menuVisible ? '80px' : '0'}}>
                     <div className="max-w-4xl mx-auto">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex gap-2">
-                          <button onClick={() => setViewDisplayMode('chords')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'chords' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
-                            Show Chords
-                          </button>
-                          <button onClick={() => setViewDisplayMode('lyrics')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'lyrics' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
-                            Lyrics Only
-                          </button>
-                          <button onClick={() => setViewDisplayMode('numbers')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'numbers' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
-                            Show Numbers
-                          </button>
-                          <button onClick={() => setColumnLayout(columnLayout === 1 ? 2 : 1)}
-                            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50"
-                            title="Toggle columns">
-                            <Columns size={18} />{columnLayout} Col
-                          </button>
-                        </div>
+                      {/* Row 1: Display mode buttons */}
+                      <div className="flex flex-wrap items-center gap-2 mb-3">
+                        <button onClick={() => setViewDisplayMode('chords')}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'chords' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                          Show Chords
+                        </button>
+                        <button onClick={() => setViewDisplayMode('lyrics')}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'lyrics' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                          Lyrics Only
+                        </button>
+                        <button onClick={() => setViewDisplayMode('numbers')}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'numbers' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                          Show Numbers
+                        </button>
+                        <button onClick={() => setColumnLayout(columnLayout === 1 ? 2 : 1)}
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50"
+                          title="Toggle columns">
+                          <Columns size={18} />{columnLayout} Col
+                        </button>
                         
+                        {/* Transpose controls - inline on desktop, wrapped on mobile */}
                         {viewDisplayMode === 'chords' && (
-                          <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 ml-auto">
                             <span className="text-sm font-medium text-gray-700">Transpose:</span>
-                            <div className="flex items-center gap-2">
-                              <button onClick={() => setTransposition(t => t - 1)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
-                              <span className="w-16 text-center font-medium">{transposition > 0 ? '+' : ''}{transposition}</span>
-                              <button onClick={() => setTransposition(t => t + 1)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
-                              {transposition !== 0 && (
-                                <button onClick={() => setTransposition(0)} className="ml-2 px-3 py-1 text-sm bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Reset</button>
-                              )}
-                            </div>
+                            <button onClick={() => setTransposition(t => t - 1)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
+                            <span className="w-16 text-center font-medium">{transposition > 0 ? '+' : ''}{transposition}</span>
+                            <button onClick={() => setTransposition(t => t + 1)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
+                            {transposition !== 0 && (
+                              <button onClick={() => setTransposition(0)} className="ml-2 px-3 py-1 text-sm bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Reset</button>
+                            )}
                           </div>
                         )}
                       </div>
                       
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                        <div className="flex items-center gap-4">
+                      {/* Row 2: Metronome, BPM, and Font controls */}
+                      <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-gray-200">
+                        <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-700">Metronome:</span>
                           <button 
                             onClick={toggleMetronome}
@@ -1997,20 +1986,18 @@ const copyToClipboard = async () => {
                           )}
                         </div>
                         
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
                           <span className="text-sm font-medium text-gray-700">BPM:</span>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => adjustMetronomeBpm(-5)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
-                            <span className="w-16 text-center font-medium">{metronomeBpm}</span>
-                            <button onClick={() => adjustMetronomeBpm(5)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
-                          </div>
-                          
-                          <span className="text-sm font-medium text-gray-700 ml-4">Font:</span>
-                          <div className="flex items-center gap-2">
-                            <button onClick={() => setPerformanceFontSize(Math.max(50, performanceFontSize - 10))} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
-                            <span className="w-16 text-center font-medium text-sm">{performanceFontSize}%</span>
-                            <button onClick={() => setPerformanceFontSize(Math.min(200, performanceFontSize + 10))} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
-                          </div>
+                          <button onClick={() => adjustMetronomeBpm(-5)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
+                          <span className="w-16 text-center font-medium">{metronomeBpm}</span>
+                          <button onClick={() => adjustMetronomeBpm(5)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-gray-700">Font:</span>
+                          <button onClick={() => setPerformanceFontSize(Math.max(50, performanceFontSize - 10))} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
+                          <span className="w-16 text-center font-medium text-sm">{performanceFontSize}%</span>
+                          <button onClick={() => setPerformanceFontSize(Math.min(200, performanceFontSize + 10))} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
                         </div>
                       </div>
                     </div>
@@ -2042,83 +2029,104 @@ const copyToClipboard = async () => {
                           
                           return (
                             <>
-                              <div className="bg-gray-900 text-white p-2 md:p-3 flex flex-wrap items-center justify-between gap-2 shrink-0 live-controls">
-                                {/* Left: Font and Metronome Controls */}
-                                <div className="flex items-center gap-2 live-font-controls">
-                                  <span className="text-xs text-gray-400">Font:</span>
-                                  <button onClick={() => setLiveFontSize(Math.max(50, liveFontSize - 10))} className="w-6 h-6 bg-gray-700 rounded hover:bg-gray-600 text-xs flex items-center justify-center">-</button>
-                                  <span className="text-xs w-12 text-center">{liveFontSize}%</span>
-                                  <button onClick={() => setLiveFontSize(Math.min(200, liveFontSize + 10))} className="w-6 h-6 bg-gray-700 rounded hover:bg-gray-600 text-xs flex items-center justify-center">+</button>
-                                  
-                                  <button 
-                                    onClick={() => setMetronomeActive(!metronomeActive)}
-                                    className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${metronomeActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'}`}
-                                    title={metronomeActive ? 'Turn metronome OFF' : 'Turn metronome ON'}>
-                                    🎵 {metronomeActive ? 'ON' : 'OFF'}
-                                  </button>
-                                  
-                                  {metronomeActive && (
+                              <div className="bg-gray-900 text-white p-2 md:p-3 shrink-0 live-controls">
+                                {/* Mobile: Two rows, Desktop: Single row */}
+                                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                  {/* Row 1 (mobile) / Left (desktop): Font and Metronome Controls */}
+                                  <div className="flex items-center justify-between md:justify-start gap-2 flex-wrap live-font-controls">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-xs text-gray-400">Font:</span>
+                                      <button onClick={() => setLiveFontSize(Math.max(50, liveFontSize - 10))} className="w-6 h-6 bg-gray-700 rounded hover:bg-gray-600 text-xs flex items-center justify-center">-</button>
+                                      <span className="text-xs w-12 text-center">{liveFontSize}%</span>
+                                      <button onClick={() => setLiveFontSize(Math.min(200, liveFontSize + 10))} className="w-6 h-6 bg-gray-700 rounded hover:bg-gray-600 text-xs flex items-center justify-center">+</button>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-2">
+                                      <button 
+                                        onClick={() => setMetronomeActive(!metronomeActive)}
+                                        className={`flex items-center gap-1 px-2 py-1 rounded text-xs font-medium ${metronomeActive ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+                                        title={metronomeActive ? 'Turn metronome OFF' : 'Turn metronome ON'}>
+                                        🎵 {metronomeActive ? 'ON' : 'OFF'}
+                                      </button>
+                                      
+                                      {metronomeActive && (
+                                        <button 
+                                          onClick={() => setMetronomeAudioMuted(!metronomeAudioMuted)}
+                                          className={`w-8 h-8 flex items-center justify-center rounded text-sm ${metronomeAudioMuted ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600'}`}
+                                          title={metronomeAudioMuted ? 'Unmute metronome' : 'Mute metronome'}>
+                                          {metronomeAudioMuted ? '🔇' : '🔊'}
+                                        </button>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Exit button - visible on mobile in row 1 */}
                                     <button 
-                                      onClick={() => setMetronomeAudioMuted(!metronomeAudioMuted)}
-                                      className={`w-8 h-8 flex items-center justify-center rounded text-sm ${metronomeAudioMuted ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-700 hover:bg-gray-600'}`}
-                                      title={metronomeAudioMuted ? 'Unmute metronome' : 'Mute metronome'}>
-                                      {metronomeAudioMuted ? '🔇' : '🔊'}
+                                      onClick={() => {
+                                        setLiveIsPlaying(false);
+                                        setLiveProgress(0);
+                                        setMetronomeActive(false);
+                                        if (window.liveTimer) {
+                                          clearInterval(window.liveTimer);
+                                          window.liveTimer = null;
+                                        }
+                                        setShowLiveMode(false);
+                                      }}
+                                      className="md:hidden bg-red-600 text-white px-3 py-1 rounded-lg hover:bg-red-700 flex items-center gap-1 text-xs ml-auto">
+                                      <X size={16} />Exit
                                     </button>
-                                  )}
-                                </div>
-                                
-                                {/* Center: Transport Controls */}
-                                <div className="flex items-center gap-2 absolute left-1/2 transform -translate-x-1/2 md:relative md:left-auto md:transform-none">
+                                  </div>
+                                  
+                                  {/* Row 2 (mobile) / Center (desktop): Transport Controls */}
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button 
+                                      onClick={() => {
+                                        if (liveSectionIndex > 0) {
+                                          setLiveSectionIndex(liveSectionIndex - 1);
+                                          setLiveProgress(0);
+                                          setLiveIsPlaying(false);
+                                        }
+                                      }}
+                                      disabled={liveSectionIndex === 0}
+                                      className="w-10 h-10 md:w-12 md:h-12 bg-gray-700 rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-lg md:text-xl flex items-center justify-center">
+                                      ⏮
+                                    </button>
+                                    
+                                    <button 
+                                      onClick={() => setLiveIsPlaying(!liveIsPlaying)}
+                                      className="w-12 h-12 md:w-16 md:h-16 bg-green-600 rounded-full hover:bg-green-700 text-xl md:text-2xl flex items-center justify-center">
+                                      {liveIsPlaying ? '⏸' : '▶'}
+                                    </button>
+                                    
+                                    <button 
+                                      onClick={() => {
+                                        if (liveSectionIndex < sections.length - 1) {
+                                          setLiveSectionIndex(liveSectionIndex + 1);
+                                          setLiveProgress(0);
+                                          setLiveIsPlaying(false);
+                                        }
+                                      }}
+                                      disabled={liveSectionIndex >= sections.length - 1}
+                                      className="w-10 h-10 md:w-12 md:h-12 bg-gray-700 rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-lg md:text-xl flex items-center justify-center">
+                                      ⏭
+                                    </button>
+                                  </div>
+                                  
+                                  {/* Desktop only: Exit button on right */}
                                   <button 
                                     onClick={() => {
-                                      if (liveSectionIndex > 0) {
-                                        setLiveSectionIndex(liveSectionIndex - 1);
-                                        setLiveProgress(0);
-                                        setLiveIsPlaying(false);
+                                      setLiveIsPlaying(false);
+                                      setLiveProgress(0);
+                                      setMetronomeActive(false);
+                                      if (window.liveTimer) {
+                                        clearInterval(window.liveTimer);
+                                        window.liveTimer = null;
                                       }
+                                      setShowLiveMode(false);
                                     }}
-                                    disabled={liveSectionIndex === 0}
-                                    className="w-10 h-10 md:w-12 md:h-12 bg-gray-700 rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-lg md:text-xl flex items-center justify-center">
-                                    ⏮
-                                  </button>
-                                  
-                                  <button 
-                                    onClick={() => setLiveIsPlaying(!liveIsPlaying)}
-                                    className="w-12 h-12 md:w-16 md:h-16 bg-green-600 rounded-full hover:bg-green-700 text-xl md:text-2xl flex items-center justify-center">
-                                    {liveIsPlaying ? '⏸' : '▶'}
-                                  </button>
-                                  
-                                  <button 
-                                    onClick={() => {
-                                      if (liveSectionIndex < sections.length - 1) {
-                                        setLiveSectionIndex(liveSectionIndex + 1);
-                                        setLiveProgress(0);
-                                        setLiveIsPlaying(false);
-                                      }
-                                    }}
-                                    disabled={liveSectionIndex >= sections.length - 1}
-                                    className="w-10 h-10 md:w-12 md:h-12 bg-gray-700 rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-lg md:text-xl flex items-center justify-center">
-                                    ⏭
+                                    className="hidden md:flex bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 items-center gap-1 text-sm">
+                                    <X size={18} />Exit Live
                                   </button>
                                 </div>
-                                
-                                {/* Right: Exit Live Button - On mobile: absolute top-right, On desktop: right side of bar */}
-                                <button 
-                                  onClick={() => {
-                                    setLiveIsPlaying(false);
-                                    setLiveProgress(0);
-                                    setMetronomeActive(false);
-                                    if (window.liveTimer) {
-                                      clearInterval(window.liveTimer);
-                                      window.liveTimer = null;
-                                    }
-                                    setShowLiveMode(false);
-                                  }}
-                                  className="live-mode-exit bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 flex items-center gap-1 text-sm">
-                                  <X size={18} />
-                                  <span className="hidden sm:inline">Exit Live</span>
-                                  <span className="sm:hidden">Exit</span>
-                                </button>
                               </div>
                               
                               <div className="bg-gray-300 h-2 shrink-0">
