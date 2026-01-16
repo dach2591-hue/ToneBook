@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.5-FINAL-ALL-WORKING - Generated: 2026-01-16 04:00:00 -->
+<!-- Version: v10.6-CSS-FIXED - Generated: 2026-01-16 05:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -21,30 +21,30 @@
       @media (max-width: 640px) {
         /* Phone styles */
         body { font-size: 14px; }
-        .font-mono { font-size: 1rem !important; }
-        h1 { font-size: 1.5rem !important; }
-        h2 { font-size: 1.25rem !important; }
+        /* Removed !important so inline fontSize styles work */
+        h1 { font-size: 1.5rem; }
+        h2 { font-size: 1.25rem; }
       }
       
       @media (min-width: 641px) and (max-width: 1024px) {
         /* Tablet styles */
         body { font-size: 16px; }
-        .font-mono { font-size: 1.1rem !important; }
+        /* Removed !important so inline fontSize styles work */
       }
       
       @media (min-width: 1920px) {
         /* Large screen / Projector */
         body { font-size: 20px; }
-        .font-mono { font-size: 1.4rem !important; }
-        h2 { font-size: 2rem !important; }
+        /* Removed !important so inline fontSize styles work */
+        h2 { font-size: 2rem; }
       }
       
       @media (min-width: 2560px) {
         /* Ultra-wide / Large Projector */
         body { font-size: 24px; }
-        .font-mono { font-size: 1.8rem !important; }
-        h1 { font-size: 3rem !important; }
-        h2 { font-size: 2.5rem !important; }
+        /* Removed !important so inline fontSize styles work */
+        h1 { font-size: 3rem; }
+        h2 { font-size: 2.5rem; }
       }
     </style>
 </head>
@@ -1096,9 +1096,9 @@ const copyToClipboard = async () => {
       @media (max-width: 768px) {
         /* Phone and small tablet styles */
         body { font-size: 14px; }
-        .font-mono { font-size: 0.95rem !important; }
-        h1 { font-size: 1.5rem !important; }
-        h2 { font-size: 1.25rem !important; }
+        /* Removed !important so inline fontSize styles work */
+        h1 { font-size: 1.5rem; }
+        h2 { font-size: 1.25rem; }
         
         /* Transform sidebar to mobile overlay */
         .sidebar-container {
@@ -2467,12 +2467,12 @@ const copyToClipboard = async () => {
                   </div>
 
                   <div className="flex-1 flex flex-col">
-                    {/* Mobile Menu Button - Only visible on mobile AND when not in Performance/Live mode */}
-                    {!viewMode && !showLiveMode && (
+                    {/* Mobile Menu Button - Show when: (1) on mobile, (2) not in Performance/Live mode, (3) sidebar is closed */}
+                    {!viewMode && !showLiveMode && !mobileMenuOpen && (
                       <button 
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        onClick={() => setMobileMenuOpen(true)}
                         className="md:hidden fixed top-4 left-4 z-50 bg-blue-600 text-white p-3 rounded-lg shadow-lg hover:bg-blue-700"
-                        aria-label="Toggle menu"
+                        aria-label="Open menu"
                       >
                         <Menu size={24} />
                       </button>
