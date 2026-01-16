@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.6-CSS-FIXED - Generated: 2026-01-16 05:00:00 -->
+<!-- Version: v10.7-SIDEBAR-FIXED - Generated: 2026-01-16 06:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2297,8 +2297,8 @@ const copyToClipboard = async () => {
                 </div>
               ) : (
                 <>
-                  {/* Sidebar - Responsive: desktop fixed, mobile overlay */}
-                  <div className={`sidebar-container w-80 bg-white border-r border-gray-200 flex flex-col ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+                  {/* Sidebar - Responsive: desktop always visible, mobile hidden until hamburger clicked */}
+                  <div className={`sidebar-container w-80 bg-white border-r border-gray-200 flex-col md:flex ${mobileMenuOpen ? 'mobile-open flex' : 'hidden md:flex'}`}>
                     <div className="p-4 border-b border-gray-200">
                       <div className="flex items-center gap-2 mb-4">
                         <Music className="text-blue-600" size={24} />
