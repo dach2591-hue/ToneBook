@@ -1,473 +1,364 @@
-# ToneBook - Worship Leader's Song Management App
+# ToneBook - Chord Transposition & Worship Leader App
 
-**Version:** 10.8 (Final)  
-**Live Demo:** https://dach2591-hue.github.io/ToneBook/
+**Version 10.10** | January 19, 2026
 
-A comprehensive web-based application for worship leaders and musicians to manage songs, transpose chords, and perform live with confidence.
+A comprehensive web-based application for worship leaders and musicians to organize songs, transpose chords, and enhance live performance experiences.
+
+![ToneBook](https://img.shields.io/badge/version-10.10-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
 
 ---
 
 ## ✨ Features
 
-### 📚 Song Management
-- **Create and edit songs** with chord notation
-- **Organize with folders** - Add songs to multiple folders simultaneously
-- **Search functionality** - Quickly find songs by title
-- **Pin important songs** - Keep frequently used songs at the top
-- **Import/Export** - Share song libraries with your team (.tone format)
-- **Smart import** - Paste chord text from any website
+### Song Management
+- 📝 Create and edit songs with chords and lyrics
+- 📌 Pin songs to create setlists
+- 🔄 Import/Export songs (JSON format)
+- 🎵 Support for chord notation `[Am]`, `[F]`, etc.
+- 🎼 Nashville Number System support
 
-### 🎵 Chord Transposition
-- **Transpose to any key** - Up or down by semitones
-- **Nashville Number System** - Toggle between chords and numbers (1-7 system)
-- **Original key tracking** - Always know the original key
-- **Automatic chord detection** - Recognizes common chord formats
+### Performance Mode
+- 🎭 Clean, readable display for live performance
+- 🔀 Real-time chord transposition
+- 🎹 Three display modes: Chords, Lyrics Only, Numbers
+- 📏 Adjustable font size (50%-200%)
+- 📊 1 or 2 column layout
+- ⏱️ Built-in metronome with visual beats
+- 🎯 Auto-hide menu (5 seconds) with persistent info bar
+- ⬅️➡️ Navigate between pinned songs without exiting
 
-### 🎭 Performance Mode
-- **Clean full-screen view** - Distraction-free display for live performance
-- **Two-column layout** - See more of the song at once (tablet/desktop)
-- **Adjustable font size** - Make text larger or smaller on the fly
-- **Metronome** - Visual and audio click track with BPM control
-- **Lyrics-only mode** - Hide chords for vocalists
-- **Show Numbers mode** - Display Nashville numbers instead of chords
-- **Auto-scroll menu** - Controls auto-hide when scrolling
+### Live Mode
+- 🎬 Automatic section advancement
+- ⏰ Duration calculation based on measures and BPM
+- 📊 Visual progress bar
+- 🎵 Section-by-section display
+- 🎼 Integrated metronome
+- 🎯 Full-screen mode when playing
+- ⏮️▶️⏭️ Transport controls
 
-### 🔴 Live Mode (Auto-Advance)
-- **Section-based progression** - Automatically advances through song sections
-- **Intelligent timing** - Calculates duration based on BPM and measures
-- **Transport controls** - Previous/Play-Pause/Next section navigation
-- **Progress bar** - Visual indicator of section completion
-- **Font controls** - Adjust text size during performance
-- **Metronome integration** - Visual beats with optional audio click
-- **Responsive layout** - Optimized controls for mobile and desktop
-
-### 📱 Mobile Responsive
-- **Phone optimized** - Clean sidebar with hamburger menu
-- **Tablet friendly** - Touch controls and readable text
-- **Desktop ready** - Full feature set with optimal layout
-- **Touch-friendly controls** - Large buttons for live performance
+### Mobile Responsive
+- 📱 Works on iPhone, iPad, Android
+- 🖥️ Desktop, tablet, and mobile optimized
+- 👆 Touch-friendly controls
+- ↕️ Mobile-specific song reordering
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Web Version (Easiest)
 
-1. **Download** `index.html` to your device
-2. **Open** it in any modern web browser:
-   - Chrome, Safari, Firefox, Edge
-   - Works on Windows, Mac, iOS, Android
-3. **Add to Home Screen** (mobile):
-   - iOS: Share → Add to Home Screen
-   - Android: Menu → Add to Home Screen
-4. **Start creating songs!**
+Visit: **https://dach2591-hue.github.io/ToneBook/**
 
-### Mac App Version
+No installation required! Works in any modern browser.
 
-1. **Download** `ToneBook.app.zip`
-2. **Extract** the zip file
-3. **Drag** ToneBook.app to your Applications folder
-4. **Open** ToneBook (right-click → Open if security prompt appears)
-5. Songs are saved in your browser's localStorage
+### Mac Desktop App
 
-### Online Version
-
-Access directly at: **https://dach2591-hue.github.io/ToneBook/**
-- No installation needed
-- Works on any device with internet
-- Share URL with your worship team
+1. Download `ToneBook-Mac-v10.10.app.zip`
+2. Extract and drag to Applications folder
+3. Open (may need to approve in Security & Privacy settings)
 
 ---
 
-## 📖 How to Use
+## 📖 Documentation
 
-### Creating a Song
+- **[English User Manual](USER-MANUAL-ENGLISH.md)** - Complete guide in English
+- **[Manual de Usuario Español](MANUAL-USUARIO-ESPAÑOL.md)** - Guía completa en español
+- **[Installation Guide](INSTALLATION.md)** - Detailed installation instructions
 
-1. Click **"+ New Song"** button
-2. Enter song **Title**
-3. Add **Content** with chords and lyrics:
-   ```
-   Intro
+---
 
-   Verse 1
-   G            D
-   Amazing grace how sweet the sound
-   Em           C
-   That saved a wretch like me
+## 🎸 Quick Guide
+
+### Creating Your First Song
+
+1. Click **"New Song"**
+2. Enter title, key (e.g., C, Db), BPM, and time signature
+3. Add chords and lyrics:
    ```
-4. Set **Key**, **BPM**, and **Time Signature**
-5. Add **measures count** for each section (for Live Mode):
-   ```
-   Intro
+   [Intro x2]
    //8 measures
+   [C] [G] [Am] [F]
    
-   Verse 1
-   //16 measures
-   G            D
-   Amazing grace how sweet the sound
+   [Verse 1]
+   [C]Amazing [G]grace how [Am]sweet the [F]sound
    ```
-6. Click **"Save Song"**
+4. Click **"Save"**
 
-### Song Format
+### Creating a Setlist
 
-ToneBook recognizes:
-- **Section headers**: Any line with text (e.g., "Verse 1", "Chorus", "Bridge")
-- **Chords**: Capital letters with optional modifiers (G, Am, D7, Cmaj7, F#m)
-- **Lyrics**: Regular text lines
-- **Measures**: Lines starting with `//` followed by number (e.g., `//8 measures` or `//8 compases`)
-
-### Organizing Songs
-
-- **Create folders**: Click "+ New Folder" button
-- **Add to folders**: Click folder icon on song → Select folders
-- **Multiple folders**: Songs can be in multiple folders at once
-- **Pin songs**: Click pin icon to keep songs at the top
+1. Click 📍 next to each song you want
+2. Songs appear at top in order
+3. Reorder:
+   - **Desktop**: Drag with ≡ handle
+   - **Mobile**: Use ↑↓ arrows
 
 ### Performance Mode
 
-1. Click **"Performance"** button on any song
-2. Use controls to:
-   - Toggle between chords/lyrics/numbers
-   - Transpose up or down
-   - Adjust font size
-   - Start metronome
-   - Switch between 1 or 2 columns
-3. Scroll or tap **LIVE button** to enter Live Mode
+1. Open a song
+2. Click **"Performance"**
+3. Menu auto-hides after 5 seconds
+4. Info bar shows: Title, Key, Tempo, Time
+5. Use **◀ Prev** / **Next ▶** to navigate songs
 
-### Live Mode (Auto-Advance)
+### Live Mode
 
-1. Enter **Performance Mode** first
-2. Click **LIVE** button (red with pulse indicator)
-3. Controls:
-   - **Font ±**: Adjust text size
-   - **🎵 ON/OFF**: Toggle metronome
-   - **🔇/🔊**: Mute/unmute metronome audio
-   - **⏮**: Previous section
-   - **▶/⏸**: Play/Pause auto-advance
-   - **⏭**: Next section
-   - **Exit**: Return to Performance Mode
-4. Sections advance automatically based on measures and BPM
-5. Progress bar shows completion for current section
-
-### Mobile Usage
-
-**On Phone/Tablet:**
-- Tap **hamburger menu (☰)** to open song list
-- Select a song → Sidebar closes automatically
-- Tap **X in sidebar** to close menu
-- All controls optimized for touch
-
-**Tips:**
-- Use 1-column view on phones for easier reading
-- 2-column works great on tablets in landscape
-- Font controls are in the menu bar (scroll if needed)
-- Live Mode controls stack vertically on narrow screens
+1. Format song with sections and measure counts:
+   ```
+   [Intro]
+   //8 measures
+   ```
+2. Enter Performance Mode
+3. Click **"LIVE"** button
+4. Press **▶ Play**
+5. Sections auto-advance based on duration
 
 ---
 
-## 🎹 Chord Format
+## 🎵 Song Format
 
-ToneBook recognizes various chord formats:
+### Basic Structure
 
-**Major chords:** C, D, E, F, G, A, B  
-**Minor chords:** Cm, Dm, Em (or Cmin, Dmin, Emin)  
-**Seventh chords:** C7, D7, Gmaj7, Am7  
-**Suspended:** Csus, Dsus4, Gsus2  
-**Diminished:** Cdim, Ddim7  
-**Augmented:** Caug  
-**Add chords:** Cadd9, Dadd11  
-**Slash chords:** C/E, G/B, D/F#  
-**Sharps/Flats:** C#, Db, F#m, Bbmaj7  
+```
+[Intro x2]
+//16 measures
+[C] [G] [Am] [F]
 
----
+[Verse 1]
+//8 measures
+[C]Amazing [G]grace how [Am]sweet the [F]sound
+[C]That saved a [G]wretch like [C]me
 
-## 🔢 Nashville Number System
+[Chorus]
+//8 measures
+[F]How great [C]is our [G]God
+```
 
-Toggle between chords and numbers for easier transposition and communication:
+### Supported Sections
 
-**In Key of C:**
-- C = 1
-- Dm = 2m
-- Em = 3m
-- F = 4
-- G = 5
-- Am = 6m
-- Bdim = 7dim
-
-**Benefits:**
-- Transpose instantly to any key
-- Universal notation for any musician
-- Focus on chord function rather than specific notes
+- Intro
+- Verse / Verso
+- Chorus / Coro
+- Bridge / Puente
+- Outro
+- Pre-Chorus
+- Instrumental
+- Interlude
+- Solo
 
 ---
 
-## ⚙️ Settings & Options
+## 💻 Technical Details
 
-### Song Metadata
-- **Original Key**: Set the song's original key (A, B, C, D, E, F, G with sharps/flats)
-- **BPM**: Beats per minute (for metronome and Live Mode timing)
-- **Time Signature**: 4/4, 3/4, 6/8, etc. (affects metronome beats)
+### Technologies Used
 
-### Display Modes
-- **Show Chords**: Full chord notation above lyrics
-- **Lyrics Only**: Hide chords (for vocalists/screens)
-- **Show Numbers**: Nashville Number System
+- **Frontend**: React (via Babel standalone)
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Storage**: Browser LocalStorage
+- **Format**: Single-file HTML application
 
-### Metronome
-- **Visual**: Animated dots showing beats
-- **Audio**: Optional click sound
-- **BPM adjustment**: ±5 BPM increments
-- **Time signature**: Automatically highlights beat 1
+### Browser Support
 
-### Font Sizing
-- **Range**: 50% to 200%
-- **10% increments**: Fine control over text size
-- **Independent**: Separate settings for Performance and Live modes
+- Chrome 90+
+- Safari 14+
+- Firefox 88+
+- Edge 90+
 
----
+### Storage
 
-## 💾 Data Storage
-
-### Local Storage
-- All songs saved in browser's localStorage
-- No internet required after initial load
-- Data persists between sessions
-- Automatic save on every edit
-
-### Import/Export
-- **Export format**: JSON-based `.tone` files
-- **Export all songs**: One file with entire library
-- **Export single song**: Individual song files
-- **Import**: Merge songs with existing library (smart duplicate detection)
-- **Backup**: Regular exports recommended
-
-### Privacy
-- All data stored locally on your device
-- No cloud storage or account required
-- No data collection or tracking
-- Complete offline capability
+- All data stored locally in browser
+- ~5-10 MB for 100 songs
+- No server required
+- Works offline after initial load
 
 ---
 
-## 🎯 Use Cases
+## 📦 Installation
 
-### Worship Leaders
-- Manage setlists with folders (e.g., "Sunday Service", "Youth Night")
-- Transpose songs to match vocalist's range
-- Display lyrics on screens (Lyrics Only mode)
-- Auto-advance through song sections during live performance
+### For GitHub Pages Deployment
 
-### Musicians
-- Keep personal songbook organized
-- Practice with metronome
-- Learn songs in different keys
-- Quick reference during rehearsals
+1. Fork this repository
+2. Enable GitHub Pages in Settings
+3. Set source to main branch / root
+4. Access at: `https://[your-username].github.io/ToneBook/`
 
-### Worship Teams
-- Share song library via export/import
-- Consistent chord notation across team
-- Individual members can transpose to their preference
-- Use Nashville numbers for quick communication
+### For Local Development
 
-### Solo Artists
-- Portable songbook on any device
-- Performance mode for gigs
-- Quick key changes between songs
-- Professional presentation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/[your-username]/ToneBook.git
+   ```
+
+2. Open `index.html` in your browser
+
+That's it! No build process required.
 
 ---
 
-## 📱 Device Compatibility
+## 🔄 Import/Export
 
-### Tested On:
-- ✅ **iOS** (iPhone, iPad) - Safari, Chrome
-- ✅ **Android** (Phone, Tablet) - Chrome, Firefox
-- ✅ **Windows** - Chrome, Edge, Firefox
-- ✅ **Mac** - Safari, Chrome, Firefox
-- ✅ **Mac App** - Standalone application
+### Export Your Songs
 
-### Minimum Requirements:
-- Modern web browser (2020 or newer)
-- JavaScript enabled
-- LocalStorage enabled
-- Screen resolution: 320px width minimum
+1. Click hamburger menu (☰)
+2. Select "Export Songs"
+3. JSON file downloads with all songs
 
-### Recommended:
-- Tablet or larger for Performance Mode
-- Landscape orientation for 2-column view
-- Touch screen for mobile controls
+### Import Songs
+
+1. Click hamburger menu (☰)
+2. Select "Import Songs"
+3. Choose JSON file
+4. Songs merge with existing (duplicates skipped)
+
+**Backup regularly!** Export before important services.
 
 ---
 
-## 🔧 Troubleshooting
+## 📱 Mobile Usage
+
+### iPad/Tablet (Recommended)
+
+- Best for live worship leading
+- Landscape orientation recommended
+- All features available
+- Use tablet stand or holder
+
+### Phone
+
+- Good for practice and preparation
+- Portrait or landscape
+- Touch-optimized controls
+- Smaller screen = less visible from distance
+
+---
+
+## 🎯 Best Practices
+
+### For Worship Leaders
+
+1. **Before Service**:
+   - Create/update all songs
+   - Pin songs in setlist order
+   - Verify keys and BPM
+   - Export backup
+
+2. **During Service**:
+   - Use Performance Mode
+   - Navigate with Prev/Next buttons
+   - Use Live Mode for complex songs
+   - Keep iPad/tablet on stand
+
+3. **After Service**:
+   - Export updated songs
+   - Note any improvements needed
+
+### Song Entry Tips
+
+- Use consistent section names: `[Verse 1]`, `[Chorus]`
+- Always use brackets for chords: `[Am]` not `Am`
+- Add measure counts for Live Mode: `//8 measures`
+- Include BPM and time signature for accurate timing
+
+---
+
+## 🐛 Troubleshooting
 
 ### Songs Not Saving
-- Check if browser allows localStorage
-- Disable "Private/Incognito" mode
-- Check browser storage quota
-- Try exporting songs and reimporting
+
+- Check browser storage settings
+- Don't use private/incognito mode
+- Clear browser cache if needed
 
 ### Chords Not Transposing
-- Ensure chords are properly formatted (capital letter)
-- Check original key is set correctly
-- Verify chord notation (use standard formats)
 
-### Performance Mode Issues
-- Refresh the page
-- Check font size settings
-- Try different display mode
-- Clear browser cache
+- Ensure chords are in brackets: `[Am]`
+- Check chord notation is correct
 
-### Mobile Sidebar Issues
-- Use hamburger menu (☰) to open
-- Tap X button to close
-- Tap outside sidebar to close
-- Tap song to select and auto-close
+### Live Mode Not Working
 
-### Live Mode Not Auto-Advancing
-- Ensure measures are set for each section (`//8 measures`)
-- Check BPM is set for the song
-- Verify time signature
-- Press Play button (▶)
+- Verify section format: `[Intro]` or `[Verse 1]`
+- Add measure counts: `//8 measures`
+
+### Mac App Security Warning
+
+- Right-click → Open
+- Or: System Preferences → Security → Open Anyway
 
 ---
 
-## 🆘 Support
+## 📝 Version History
 
-### Common Questions
+### v10.10 (January 2026)
+- **New**: Centered header bar in Performance Mode
+- **New**: Improved metronome integration
+- **Fix**: Header overlap in Performance Mode
+- **Fix**: Mobile responsiveness improvements
+- **Enhancement**: Better info display when menu hidden
 
-**Q: Can multiple people use the same song library?**  
-A: Yes! Export your library and share the `.tone` file. Others can import it.
+### v10.9 (January 2026)
+- **New**: Prev/Next navigation in Live Mode
+- **Fix**: Db vs C# display consistency
+- **New**: Mobile song reordering with arrow buttons
+- **Fix**: Stay in Performance/Live Mode when navigating
 
-**Q: Does this work offline?**  
-A: Yes! After initial load, everything works offline. Songs are stored locally.
+### v10.8 (January 2026)
+- **New**: Mobile sidebar close button
+- **Fix**: Font controls on mobile
+- **Fix**: Two-column layout balancing
+- **Fix**: Live Mode controls on mobile
 
-**Q: Can I use this on multiple devices?**  
-A: Yes, but you'll need to export from one device and import to another to sync songs.
-
-**Q: Is my data backed up?**  
-A: No automatic backup. Export your songs regularly as backup.
-
-**Q: Can I customize the app?**  
-A: Yes! The HTML file can be edited. It's open source.
-
-### Getting Help
-
-- Check this README first
-- Review the troubleshooting section
-- Export your songs before making changes
-- Test in a different browser if issues persist
+[See full version history in manuals]
 
 ---
 
-## 🎼 Tips & Best Practices
+## 🤝 Contributing
 
-### Song Entry
-- Use consistent section naming (Verse 1, Chorus, Bridge)
-- Add measure counts for Live Mode functionality
-- Include original key in metadata
-- Set accurate BPM for metronome
+Suggestions and feedback welcome!
 
-### Performance
-- Test songs in Performance Mode before live use
-- Adjust font size before starting (not during song)
-- Practice with Live Mode before using in service
-- Have backup plan (printed lyrics/chords)
-
-### Organization
-- Create folders for different services/events
-- Use pin feature for frequently used songs
-- Export library regularly as backup
-- Name songs consistently for easy search
-
-### Collaboration
-- Share exported songs with team members
-- Use Nashville numbers for easier communication
-- Set standard keys for your team
-- Export setlists for specific services
-
----
-
-## 🔄 Version History
-
-### v10.8 (Current) - Final Release
-- ✅ Close button inside sidebar header
-- ✅ Font controls working on all devices
-- ✅ Improved two-column balance algorithm
-- ✅ Live Mode mobile layout optimized
-- ✅ Hamburger menu fully functional
-- ✅ Mobile responsive sidebar
-
-### v10.7
-- Fixed sidebar visibility on mobile
-- Improved hamburger menu behavior
-
-### v10.6
-- Removed CSS !important blocking font controls
-- Font sizing now works on mobile/tablet
-
-### v10.5
-- Added font controls to Performance Mode
-- Improved column balancing algorithm
-
-### Earlier Versions
-- Performance Mode with metronome
-- Live Mode with auto-advance
-- Nashville Number System
-- Import/Export functionality
-- Folder organization
-- Mobile responsive design
+- Open an issue for bugs
+- Submit feature requests
+- Share your experience
 
 ---
 
 ## 📄 License
 
-ToneBook is free to use for personal and ministry purposes.
-
-### You May:
-- Use it for worship leading
-- Share it with your team
-- Modify the code for your needs
-- Host it on your own website
-
-### Please:
-- Keep it free for ministry use
-- Share improvements with others
-- Give credit where appropriate
+MIT License - Feel free to use for personal and worship purposes.
 
 ---
 
-## 🙏 Credits
+## 👤 Author
 
-**Developed for worship leaders and musicians worldwide.**
-
-Special thanks to:
-- Worship leaders who tested and provided feedback
-- Musicians who helped refine the features
-- The open-source community
-
-**Technologies Used:**
-- React (via Babel standalone)
-- Tailwind CSS
-- Lucide React Icons
-- HTML5 LocalStorage API
+**Daniel Chay Perea**
 
 ---
 
-## 📞 Contact
+## 🙏 Acknowledgments
 
-For questions, feedback, or feature requests:
-- GitHub: https://github.com/dach2591-hue/ToneBook
-- Issues: Submit via GitHub Issues
+Created for worship leaders and musicians to enhance live worship experiences.
 
 ---
 
-## 🎸 Happy Worship Leading!
+## 📞 Support
 
-**ToneBook v10.8** - Making worship leading easier, one song at a time.
+- Check the [User Manual](USER-MANUAL-ENGLISH.md)
+- Open an issue on GitHub
 
 ---
 
-**Last Updated:** January 16, 2026  
-**Version:** 10.8 (Final)  
-**Status:** Production Ready ✅
+**Happy Worship Leading!** 🎸🙏✨
+
+---
+
+## 🔗 Links
+
+- **Live Demo**: https://dach2591-hue.github.io/ToneBook/
+- **User Manual (English)**: [USER-MANUAL-ENGLISH.md](USER-MANUAL-ENGLISH.md)
+- **Manual de Usuario (Español)**: [MANUAL-USUARIO-ESPAÑOL.md](MANUAL-USUARIO-ESPAÑOL.md)
+- **Installation Guide**: [INSTALLATION.md](INSTALLATION.md)
+
+---
+
+**Last Updated**: January 19, 2026 | **Version**: 10.10
