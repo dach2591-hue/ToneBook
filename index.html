@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.10-NEW-CENTERED-HEADER - Generated: 2026-01-19 09:00:00 -->
+<!-- Version: v10.10.1-IPAD-ARROWS-FIX - Generated: 2026-01-19 10:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2663,7 +2663,7 @@ const copyToClipboard = async () => {
                                 onClick={() => loadSong(song)}>
                                 <div className="flex items-start justify-between gap-2">
                                   {song.pinned && (
-                                    <div className="hidden md:flex cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
+                                    <div className="hidden lg:flex cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
                                       <Menu size={16} />
                                     </div>
                                   )}
@@ -2679,9 +2679,9 @@ const copyToClipboard = async () => {
                                     </div>
                                   </div>
                                   <div className="flex flex-col gap-1">
-                                    {/* Move up/down buttons for pinned songs - visible on mobile */}
+                                    {/* Move up/down buttons for pinned songs - visible on mobile and tablet */}
                                     {song.pinned && (
-                                      <div className="flex md:hidden flex-col gap-1">
+                                      <div className="flex lg:hidden flex-col gap-1">
                                         <button 
                                           onClick={(e) => movePinnedSongUp(song.id, e)} 
                                           className="text-gray-400 hover:text-blue-600 p-1"
