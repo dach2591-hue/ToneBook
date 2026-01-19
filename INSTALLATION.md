@@ -1,330 +1,409 @@
-# ToneBook v10.8 - Installation Guide
+# ToneBook Installation Guide
 
-## 📦 What's Included
-
-- **index.html** - Web version (works on any device)
-- **ToneBook-Mac-v10.8.app.zip** - Mac application
-- **README.md** - Complete documentation
-- **ToneBook-v10.8-Complete-Package.zip** - Everything in one file
+Complete installation instructions for all platforms.
 
 ---
 
-## 🌐 Web Version (Recommended for Most Users)
+## 📦 Installation Options
 
-### Installation
+ToneBook is available in three formats:
 
-1. **Download** `index.html`
-2. **Save** to a convenient location:
-   - Desktop
-   - Documents folder
-   - Dropbox/iCloud for sync across devices
-3. **Double-click** to open in your browser
-4. **Bookmark** or **Add to Home Screen** for easy access
-
-### Add to Home Screen (Mobile)
-
-**iOS (iPhone/iPad):**
-1. Open `index.html` in Safari
-2. Tap the **Share** button (box with arrow)
-3. Scroll down and tap **"Add to Home Screen"**
-4. Name it "ToneBook"
-5. Tap **"Add"**
-6. Now it appears like a native app on your home screen!
-
-**Android:**
-1. Open `index.html` in Chrome
-2. Tap the **three dots** menu
-3. Tap **"Add to Home Screen"**
-4. Name it "ToneBook"
-5. Tap **"Add"**
+1. **Web Version** (Recommended) - No installation
+2. **Mac Desktop App** - Standalone application
+3. **Self-Hosted** - Host on your own server
 
 ---
 
-## 🍎 Mac App Version
+## 🌐 Option 1: Web Version (Easiest)
 
-### Installation
+### Access Online
 
-1. **Download** `ToneBook-Mac-v10.8.app.zip`
-2. **Extract** the zip file (double-click)
-3. **Drag** `ToneBook.app` to your **Applications** folder
-4. **First launch:**
-   - Right-click `ToneBook.app`
-   - Select **"Open"**
-   - Click **"Open"** in the security dialog
-   - (Only needed first time - macOS security check)
-5. **Subsequent launches:**
-   - Double-click `ToneBook.app` normally
-   - Or launch from Spotlight (Cmd+Space, type "ToneBook")
+Simply visit: **https://dach2591-hue.github.io/ToneBook/**
 
-### Troubleshooting Mac App
+**Advantages**:
+- ✅ No installation required
+- ✅ Always up to date
+- ✅ Works on any device with a browser
+- ✅ Instant access
 
-**"ToneBook.app is damaged and can't be opened"**
+**Requirements**:
+- Modern web browser (Chrome, Safari, Firefox, Edge)
+- Internet connection for initial load
+- Works offline after first visit
 
-This is a Gatekeeper security message. Fix it:
+### Bookmark for Easy Access
 
+**iOS/iPad**:
+1. Open in Safari
+2. Tap Share button
+3. Select "Add to Home Screen"
+4. Icon appears on home screen like an app
+
+**Android**:
+1. Open in Chrome
+2. Tap menu (⋮)
+3. Select "Add to Home screen"
+4. Icon appears on home screen
+
+**Desktop**:
+- Bookmark the URL
+- Or use browser's "Install App" option
+
+---
+
+## 🖥️ Option 2: Mac Desktop App
+
+### Download
+
+Get the latest version: `ToneBook-Mac-v10.10.app.zip`
+
+### Installation Steps
+
+1. **Download** the ZIP file
+
+2. **Extract** the ZIP file:
+   - Double-click `ToneBook-Mac-v10.10.app.zip`
+   - Or right-click → Open With → Archive Utility
+
+3. **Install**:
+   - Drag `ToneBook.app` to your Applications folder
+   - Optional: Drag to Dock for quick access
+
+4. **Open**:
+   - Double-click ToneBook in Applications
+   - Or click icon in Dock
+
+### First Launch (Security)
+
+macOS may show a security warning because the app isn't from the App Store.
+
+**Method 1: Right-Click Open**
+1. Right-click (or Control+click) on ToneBook.app
+2. Select "Open"
+3. Click "Open" in the dialog
+4. App will open normally from now on
+
+**Method 2: System Preferences**
+1. Try to open ToneBook normally
+2. macOS shows "cannot be opened" message
+3. Go to: System Preferences → Security & Privacy
+4. Click "Open Anyway"
+5. Click "Open" to confirm
+
+**Method 3: Terminal Command** (Advanced)
 ```bash
-# Open Terminal and run:
 xattr -cr /Applications/ToneBook.app
 ```
 
-Then try opening again.
+### System Requirements
 
-**"ToneBook can't be opened because it is from an unidentified developer"**
+- **macOS**: 10.13 (High Sierra) or later
+- **Storage**: 50 MB free space
+- **RAM**: 100 MB
 
-1. Go to **System Preferences** → **Security & Privacy**
-2. Click **"Open Anyway"** button
-3. Or right-click app → **Open** (as mentioned above)
+### Updating
 
-**Chrome not installed?**
-
-The Mac app tries to use Chrome for the best experience. If Chrome isn't installed:
-- The app will open in your default browser
-- Or install Chrome: https://www.google.com/chrome/
+1. Download new version
+2. Drag to Applications (replace old version)
+3. Your data is stored separately (won't be lost)
 
 ---
 
-## ☁️ Online Version
+## 🌍 Option 3: Self-Hosted
 
-**No installation needed!**
+### For GitHub Pages
 
-Just visit: **https://dach2591-hue.github.io/ToneBook/**
+**Fork Repository**:
+1. Go to: https://github.com/[original-repo]/ToneBook
+2. Click "Fork" button
+3. Wait for fork to complete
 
-**Pros:**
-- ✅ No download required
-- ✅ Always up-to-date
-- ✅ Works on any device
-- ✅ Easy to share with team
+**Enable GitHub Pages**:
+1. Go to your forked repo Settings
+2. Navigate to "Pages" section
+3. Under "Source", select:
+   - Branch: `main`
+   - Folder: `/ (root)`
+4. Click "Save"
+5. Wait 1-2 minutes
+6. Access at: `https://[your-username].github.io/ToneBook/`
 
-**Cons:**
-- ❌ Requires internet connection
-- ❌ Slower initial load
+**Custom Domain** (Optional):
+1. In Pages settings, add your domain
+2. Create CNAME record pointing to: `[your-username].github.io`
+3. Wait for DNS propagation
 
----
+### For Own Server
 
-## 💾 Data & Storage
+**Requirements**:
+- Web server (Apache, Nginx, etc.)
+- No database needed
+- No server-side processing needed
 
-### Where Are Songs Saved?
+**Installation**:
+1. Download `index.html`
+2. Upload to your web server
+3. Access via browser
 
-**All versions (Web, Mac, Online):**
-- Songs saved in **browser's localStorage**
-- Data stays on your device
-- No cloud storage or account needed
-- Completely private
+**Example (Apache)**:
+```bash
+# Copy file
+cp index.html /var/www/html/tonebook/
 
-### Important Notes
+# Access at:
+http://your-domain.com/tonebook/
+```
 
-1. **Data is browser-specific:**
-   - Songs in Chrome stay in Chrome
-   - Songs in Safari stay in Safari
-   - Each browser has separate storage
+### For Local Development
 
-2. **Data is device-specific:**
-   - Songs on your phone stay on your phone
-   - Songs on your computer stay on your computer
-   - Use Export/Import to sync between devices
+**No Build Required**:
+1. Download or clone repository
+2. Open `index.html` in browser
+3. That's it!
 
-3. **Clearing browser data = losing songs:**
-   - Export songs regularly as backup!
-   - Don't clear browser data without exporting first
-   - Private/Incognito mode won't save songs
+```bash
+# Clone
+git clone https://github.com/[your-username]/ToneBook.git
+cd ToneBook
 
-### Backing Up Your Songs
+# Open in browser (macOS)
+open index.html
 
-**Recommended: Export regularly**
+# Open in browser (Linux)
+xdg-open index.html
 
-1. Click **"Export All Songs"** button
-2. Save the `.tone` file to:
-   - iCloud Drive / Google Drive
-   - Dropbox
-   - External hard drive
-   - Email to yourself
-3. Keep multiple backups in different locations
-
-### Syncing Between Devices
-
-**Manual sync via Export/Import:**
-
-1. **On Device 1:**
-   - Export All Songs
-   - Save `.tone` file to cloud storage (Dropbox, etc.)
-
-2. **On Device 2:**
-   - Download `.tone` file
-   - Click "Import Songs"
-   - Select the `.tone` file
-   - Songs will merge with existing library
+# Open in browser (Windows)
+start index.html
+```
 
 ---
 
-## 🔧 Advanced Setup
+## 📱 Mobile Installation
 
-### Using with Multiple Computers
+### iOS/iPadOS
 
-**Option 1: Cloud Folder**
-1. Save `index.html` to Dropbox/iCloud/Google Drive
-2. Open from cloud folder on all computers
-3. Songs save to each computer's browser
-4. Export/Import to sync song libraries
+**Add to Home Screen**:
+1. Open https://dach2591-hue.github.io/ToneBook/ in Safari
+2. Tap Share button (box with arrow)
+3. Scroll down and tap "Add to Home Screen"
+4. Name it "ToneBook"
+5. Tap "Add"
 
-**Option 2: USB Drive**
-1. Copy `index.html` to USB drive
-2. Open from USB drive
-3. Songs save to computer's browser (not USB)
-4. Good for guest computers
+**Result**: Icon on home screen, opens like native app
 
-**Option 3: Host on GitHub Pages**
-1. Create GitHub repository
-2. Upload `index.html`
-3. Enable GitHub Pages
-4. Access via URL from anywhere
-5. Share URL with worship team
+**Features**:
+- Full-screen mode
+- No browser UI
+- Faster access
+- Works offline after first visit
 
-### Custom Hosting
+### Android
 
-Upload `index.html` to:
-- Your church website
-- Personal web server
-- Netlify / Vercel (free)
-- Any web host
+**Add to Home Screen**:
+1. Open URL in Chrome
+2. Tap menu (⋮) in top-right
+3. Tap "Add to Home screen"
+4. Name it "ToneBook"
+5. Tap "Add"
 
-Just upload the single HTML file - it's completely self-contained!
+**Result**: Icon on home screen
 
 ---
 
-## 📱 Device Recommendations
+## 💾 Data Storage
 
-### Best Experience
+### Where Is Data Stored?
 
-**For Worship Leaders:**
-- iPad (10-12 inch) in landscape
-- 2-column view in Performance Mode
-- Large enough for easy reading during service
+**Web Version**:
+- Browser's LocalStorage
+- Specific to browser and domain
+- Persists between sessions
+- Not synced across devices
 
-**For Musicians:**
-- Tablet or laptop
-- Stand or mount for hands-free viewing
-- External monitor/TV for larger display
+**Mac App**:
+- Application's LocalStorage
+- Stored in: `~/Library/Application Support/ToneBook/`
+- Persists even if app is reinstalled
 
-**For Practice:**
-- Phone works great
-- Easy to carry
-- Perfect for quick reference
+### Backup Your Data
 
-### Screen Size Recommendations
+**Important**: Always backup!
 
-- **Phone (≤6.5"):** 1-column view, font size 120-140%
-- **Tablet (7-11"):** 1 or 2-column, font size 100-120%
-- **Laptop (≥13"):** 2-column view, font size 100%
-- **Desktop/Projector:** 2-column, font size 100-140%
+1. **Export Songs**:
+   - Open ToneBook
+   - Click menu (☰)
+   - Select "Export Songs"
+   - Save JSON file
 
----
+2. **Save Export File**:
+   - Cloud storage (Google Drive, Dropbox)
+   - Multiple locations
+   - Regular backups (weekly recommended)
 
-## 🎵 First-Time Setup
-
-### Quick Start (5 minutes)
-
-1. **Open ToneBook** (web or Mac app)
-2. **Click "+ New Song"**
-3. **Enter a song:**
-   ```
-   Amazing Grace
-   
-   Verse 1
-   G            D
-   Amazing grace how sweet the sound
-   Em           C
-   That saved a wretch like me
-   ```
-4. **Set Key:** G
-5. **Set BPM:** 80
-6. **Save Song**
-7. **Click "Performance"** to see it in action!
-
-### Import Sample Songs
-
-If you have existing songs in text format:
-1. Copy the text (with chords above lyrics)
-2. Click **"+ New Song"**
-3. Paste into the content area
-4. Clean up formatting if needed
-5. Save
+3. **Restore**:
+   - Open ToneBook
+   - Click menu (☰)
+   - Select "Import Songs"
+   - Choose JSON file
 
 ---
 
-## 🆘 Getting Help
-
-### Common Issues
-
-**Songs not saving?**
-- Check browser allows localStorage
-- Don't use Private/Incognito mode
-- Export songs as backup
-
-**Mac app won't open?**
-- Right-click → Open (first time)
-- Run: `xattr -cr /Applications/ToneBook.app`
-- Check Chrome is installed
-
-**Mobile sidebar won't close?**
-- Tap the X button in sidebar header
-- Tap outside the sidebar
-- Tap a song to select and close
-
-**Font size not changing?**
-- Clear browser cache
-- Force refresh (Ctrl+Shift+R or Cmd+Shift+R)
-- Check you're on v10.8
-
-### Support
-
-- **Documentation:** See README.md
-- **GitHub:** https://github.com/dach2591-hue/ToneBook
-- **Updates:** Check GitHub for new versions
-
----
-
-## ✅ Installation Checklist
+## 🔄 Updating
 
 ### Web Version
-- [ ] Downloaded index.html
-- [ ] Saved to accessible location
-- [ ] Opened in browser successfully
-- [ ] Created first song
-- [ ] Tested Performance Mode
-- [ ] Exported songs as backup
+
+- **Automatic**: Always latest version
+- **Manual**: Clear browser cache to force update
 
 ### Mac App
-- [ ] Downloaded and extracted ToneBook.app
-- [ ] Moved to Applications folder
-- [ ] Opened app (right-click → Open first time)
-- [ ] App launches successfully
-- [ ] Created first song
-- [ ] Exported songs as backup
 
-### Mobile
-- [ ] Opened in Safari/Chrome
-- [ ] Added to Home Screen
-- [ ] Tested hamburger menu
-- [ ] Tested Performance Mode
-- [ ] Tested font size adjustment
-- [ ] Exported songs as backup
+1. Download new version
+2. Replace old app in Applications
+3. Your data is preserved
+
+### Check Version
+
+Look at bottom of main page or in About section.
+
+Current version: **10.10**
 
 ---
 
-## 🎉 You're Ready!
+## 🐛 Troubleshooting Installation
 
-**ToneBook v10.8 is installed and ready to use!**
+### Web Version
 
-Start adding your worship songs and enjoy leading with confidence. 🎸
+**"Page Not Loading"**:
+- Check internet connection
+- Try different browser
+- Clear browser cache
+- Disable browser extensions
 
-Remember to:
-- Export your songs regularly
-- Test Performance/Live Mode before services
-- Share with your worship team
-- Have fun! 🎵
+**"Storage Full" Error**:
+- Clear browser data
+- Free up storage space
+- Export songs first!
+
+### Mac App
+
+**"App is damaged and can't be opened"**:
+- See [First Launch (Security)](#first-launch-security) above
+- Most common issue with Mac app
+
+**"App won't open"**:
+- Check macOS version (need 10.13+)
+- Try right-click → Open
+- Check Security & Privacy settings
+
+**"App crashes on launch"**:
+- Delete app preferences:
+  ```bash
+  rm -rf ~/Library/Application\ Support/ToneBook/
+  ```
+- Reinstall app
+
+### Data Issues
+
+**"Songs disappeared"**:
+- Check if using different browser/device
+- Check if browser data was cleared
+- Restore from backup export
+
+**"Can't import songs"**:
+- Verify JSON file is valid
+- Check file isn't corrupted
+- Try exporting and re-importing
 
 ---
 
-**Version:** 10.8 (Final)  
-**Last Updated:** January 16, 2026  
-**Installation Guide Version:** 1.0
+## 🔒 Security & Privacy
+
+### Data Privacy
+
+- **All data stored locally** on your device
+- **No cloud sync** (your data never leaves your device)
+- **No tracking** or analytics
+- **No account required**
+
+### Permissions
+
+**Web Version**:
+- LocalStorage (for saving songs)
+- Audio (for metronome)
+
+**Mac App**:
+- Same as web version
+- No additional permissions needed
+
+---
+
+## 🌐 Browser Compatibility
+
+### Recommended Browsers
+
+| Browser | Version | Rating |
+|---------|---------|--------|
+| Chrome | 90+ | ⭐⭐⭐⭐⭐ Best |
+| Safari | 14+ | ⭐⭐⭐⭐⭐ Best |
+| Edge | 90+ | ⭐⭐⭐⭐⭐ Best |
+| Firefox | 88+ | ⭐⭐⭐⭐ Good |
+
+### Mobile Browsers
+
+| Browser | Platform | Rating |
+|---------|----------|--------|
+| Safari | iOS/iPad | ⭐⭐⭐⭐⭐ Best |
+| Chrome | Android | ⭐⭐⭐⭐⭐ Best |
+| Chrome | iOS | ⭐⭐⭐⭐ Good |
+
+---
+
+## 💡 Tips
+
+### Best Setup for Worship Leading
+
+1. **iPad/Tablet** (Recommended):
+   - Large screen
+   - Portable
+   - Touch controls
+   - Add to home screen for app-like experience
+
+2. **Desktop/Laptop**:
+   - Largest screen
+   - Full keyboard
+   - Use Mac app or web version
+
+3. **Phone**:
+   - Backup device
+   - Practice mode
+   - Emergency use
+
+### Recommended Accessories
+
+- **iPad Stand**: For hands-free viewing
+- **Bluetooth Page Turner**: For advancing songs
+- **External Speaker**: For metronome in noisy environments
+
+---
+
+## 📞 Support
+
+Need help with installation?
+
+- Check [Troubleshooting](#troubleshooting-installation)
+- Read [User Manual](USER-MANUAL-ENGLISH.md)
+- Open GitHub issue
+
+---
+
+## ✅ Post-Installation
+
+After installing, see:
+- **[User Manual (English)](USER-MANUAL-ENGLISH.md)** - Complete guide
+- **[Manual de Usuario (Español)](MANUAL-USUARIO-ESPAÑOL.md)** - Guía en español
+
+---
+
+**Installation Complete!** 🎉
+
+Ready to start using ToneBook for worship leading! 🎸🙏
