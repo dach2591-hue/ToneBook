@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.9.8-METRONOME-BELOW-INFO - Generated: 2026-01-19 08:00:00 -->
+<!-- Version: v10.10-NEW-CENTERED-HEADER - Generated: 2026-01-19 09:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1991,12 +1991,6 @@ const copyToClipboard = async () => {
               )}
 
               
-          {viewMode && metronomeActive && !menuVisible && (
-            <div className="fixed top-20 right-4 z-50 bg-black bg-opacity-70 rounded p-2 text-white text-sm flex gap-2 items-center">
-              <span>{metronomeBpm}</span>
-              {[...Array(4)].map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === currentBeat - 1 ? 'bg-green-400' : 'bg-gray-500'}`} />)}
-            </div>
-          )}
           {viewMode ? (
                 <div className="flex-1 flex flex-col bg-white">
                   <div className={`fixed top-0 left-0 right-0 z-50 bg-gray-800 text-white p-4 transition-all duration-300 ${menuVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
@@ -2067,7 +2061,7 @@ const copyToClipboard = async () => {
                     </div>
                   </div>
 
-                  <div className={`fixed top-0 left-0 right-0 z-40 bg-gray-100 border-b border-gray-200 p-3 transition-all duration-300 ${menuVisible ? 'opacity-100' : 'opacity-0 -translate-y-full pointer-events-none'}`} style={{top: menuVisible ? '80px' : '0'}}>
+                  <div className={`fixed top-0 left-0 right-0 z-40 bg-gray-100 border-b border-gray-200 p-3 transition-all duration-300 ${menuVisible ? 'opacity-100' : 'opacity-0 -translate-y-full pointer-events-none'}`} style={{top: menuVisible ? '100px' : '0'}}>
                     <div className="max-w-4xl mx-auto">
                       {/* Row 1: Display mode buttons */}
                       <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -2138,18 +2132,50 @@ const copyToClipboard = async () => {
                     </div>
                   </div>
 
-                  {/* Permanent Song Info - Visible when menu is hidden */}
+                  {/* Permanent Song Info Bar - Visible when menu is hidden - New centered design */}
                   {!menuVisible && (
-                    <div className="fixed top-4 right-4 z-40 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg">
-                      <div className="text-sm font-bold">{currentSong.title}</div>
-                      <div className="text-xs text-gray-300 mt-1 flex items-center gap-2">
-                        <span>Key: {getCurrentKey()}</span>
-                        {currentSong.bpm && <span>• {currentSong.bpm} BPM</span>}
+                    <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900 bg-opacity-95 text-white px-4 py-3 shadow-lg">
+                      <div className="max-w-4xl mx-auto flex items-center justify-between">
+                        {/* Left side: Song title */}
+                        <div className="flex-1">
+                          <h3 className="text-lg md:text-xl font-bold">{currentSong.title}</h3>
+                          {/* Metronome below title when active */}
+                          {metronomeActive && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-sm">{metronomeBpm} BPM</span>
+                              <div className="flex gap-1">
+                                {[...Array(4)].map((_, i) => (
+                                  <div key={i} className={`w-2 h-2 rounded-full ${i === currentBeat - 1 ? 'bg-green-400' : 'bg-gray-500'}`} />
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Right side: Key, Tempo, Time */}
+                        <div className="flex items-center gap-4 text-sm md:text-base">
+                          <div className="text-right">
+                            <div className="text-gray-400 text-xs">Key</div>
+                            <div className="font-bold">{getCurrentKey()}</div>
+                          </div>
+                          {currentSong.bpm && (
+                            <div className="text-right">
+                              <div className="text-gray-400 text-xs">Tempo</div>
+                              <div className="font-bold">{currentSong.bpm}</div>
+                            </div>
+                          )}
+                          {currentSong.timeSignature && (
+                            <div className="text-right">
+                              <div className="text-gray-400 text-xs">Time</div>
+                              <div className="font-bold">{currentSong.timeSignature}</div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
 
-                  <div className={`flex-1 overflow-y-auto p-8 transition-all duration-300 ${menuVisible ? 'mt-48' : 'mt-0'}`}>
+                  <div className={`flex-1 overflow-y-auto p-8 transition-all duration-300 ${menuVisible ? 'mt-48' : 'mt-16'}`}>
                     {showLiveMode ? (
                       <div className="fixed inset-0 z-50 bg-white flex flex-col" onClick={() => {
                         // Click anywhere to toggle controls visibility when playing
