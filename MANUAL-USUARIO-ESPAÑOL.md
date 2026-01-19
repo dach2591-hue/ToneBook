@@ -554,7 +554,7 @@ Siempre pon la línea de compases justo después del encabezado de sección.
 
 ## Créditos
 
-**Creado por**: Daniel  
+**Creado por**: Daniel Chay Perea
 **Versión**: 10.10  
 **Última Actualización**: 19 de Enero, 2026
 
