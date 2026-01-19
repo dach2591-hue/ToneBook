@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.9.2-ARROW-BUTTONS-ONLY - Generated: 2026-01-19 02:00:00 -->
+<!-- Version: v10.9.8-METRONOME-BELOW-INFO - Generated: 2026-01-19 08:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1992,7 +1992,7 @@ const copyToClipboard = async () => {
 
               
           {viewMode && metronomeActive && !menuVisible && (
-            <div className="fixed top-4 right-4 z-50 bg-black bg-opacity-70 rounded p-2 text-white text-sm flex gap-2 items-center">
+            <div className="fixed top-20 right-4 z-50 bg-black bg-opacity-70 rounded p-2 text-white text-sm flex gap-2 items-center">
               <span>{metronomeBpm}</span>
               {[...Array(4)].map((_, i) => <div key={i} className={`w-2 h-2 rounded-full ${i === currentBeat - 1 ? 'bg-green-400' : 'bg-gray-500'}`} />)}
             </div>
@@ -2138,11 +2138,27 @@ const copyToClipboard = async () => {
                     </div>
                   </div>
 
+                  {/* Permanent Song Info - Visible when menu is hidden */}
+                  {!menuVisible && (
+                    <div className="fixed top-4 right-4 z-40 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg">
+                      <div className="text-sm font-bold">{currentSong.title}</div>
+                      <div className="text-xs text-gray-300 mt-1 flex items-center gap-2">
+                        <span>Key: {getCurrentKey()}</span>
+                        {currentSong.bpm && <span>• {currentSong.bpm} BPM</span>}
+                      </div>
+                    </div>
+                  )}
+
                   <div className={`flex-1 overflow-y-auto p-8 transition-all duration-300 ${menuVisible ? 'mt-48' : 'mt-0'}`}>
                     {showLiveMode ? (
-                      <div className="fixed inset-0 z-50 bg-white flex flex-col">
+                      <div className="fixed inset-0 z-50 bg-white flex flex-col" onClick={() => {
+                        // Click anywhere to toggle controls visibility when playing
+                        if (liveIsPlaying) {
+                          setMenuVisible(!menuVisible);
+                        }
+                      }}>
                         {/* Live Mode Content */}
-                        <div className="h-full flex flex-col">
+                        <div className="h-full flex flex-col relative">
                         {(() => {
                           const sections = parseLiveSections(currentSong?.content || '');
                           
@@ -2164,7 +2180,18 @@ const copyToClipboard = async () => {
                           
                           return (
                             <>
-                              <div className="bg-gray-900 text-white p-2 md:p-3 shrink-0 live-controls">
+                              {/* Header - Auto-hide when playing, absolutely positioned */}
+                              <div className={`absolute top-0 left-0 right-0 bg-gray-900 text-white p-2 md:p-3 live-controls transition-transform duration-300 ${liveIsPlaying && !menuVisible ? '-translate-y-full' : 'translate-y-0'}`} style={{zIndex: 10}}>
+                                {/* Song Title and Info */}
+                                <div className="mb-2 pb-2 border-b border-gray-700">
+                                  <h2 className="text-base md:text-lg font-bold">{currentSong.title}</h2>
+                                  <div className="text-xs text-gray-400 mt-1">
+                                    Key: {currentSong.originalKey}
+                                    {currentSong.bpm && <span> • {currentSong.bpm} BPM</span>}
+                                    {currentSong.timeSignature && <span> • {currentSong.timeSignature}</span>}
+                                  </div>
+                                </div>
+                                
                                 {/* Mobile: Two rows, Desktop: Single row */}
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                                   {/* Row 1 (mobile) / Left (desktop): Font and Metronome Controls */}
@@ -2239,41 +2266,6 @@ const copyToClipboard = async () => {
                                     </button>
                                   </div>
                                   
-                                  {/* Row 2 (mobile) / Center (desktop): Transport Controls */}
-                                  <div className="flex items-center justify-center gap-2">
-                                    <button 
-                                      onClick={() => {
-                                        if (liveSectionIndex > 0) {
-                                          setLiveSectionIndex(liveSectionIndex - 1);
-                                          setLiveProgress(0);
-                                          setLiveIsPlaying(false);
-                                        }
-                                      }}
-                                      disabled={liveSectionIndex === 0}
-                                      className="w-10 h-10 md:w-12 md:h-12 bg-gray-700 rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-lg md:text-xl flex items-center justify-center">
-                                      ⏮
-                                    </button>
-                                    
-                                    <button 
-                                      onClick={() => setLiveIsPlaying(!liveIsPlaying)}
-                                      className="w-12 h-12 md:w-16 md:h-16 bg-green-600 rounded-full hover:bg-green-700 text-xl md:text-2xl flex items-center justify-center">
-                                      {liveIsPlaying ? '⏸' : '▶'}
-                                    </button>
-                                    
-                                    <button 
-                                      onClick={() => {
-                                        if (liveSectionIndex < sections.length - 1) {
-                                          setLiveSectionIndex(liveSectionIndex + 1);
-                                          setLiveProgress(0);
-                                          setLiveIsPlaying(false);
-                                        }
-                                      }}
-                                      disabled={liveSectionIndex >= sections.length - 1}
-                                      className="w-10 h-10 md:w-12 md:h-12 bg-gray-700 rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-lg md:text-xl flex items-center justify-center">
-                                      ⏭
-                                    </button>
-                                  </div>
-                                  
                                   {/* Desktop only: Exit button on right */}
                                   <button 
                                     onClick={() => {
@@ -2292,11 +2284,53 @@ const copyToClipboard = async () => {
                                 </div>
                               </div>
                               
+                              {/* Transport Controls - Floating at bottom center */}
+                              <div className={`fixed bottom-20 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ${liveIsPlaying && !menuVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                                <div className="flex items-center justify-center gap-2 bg-gray-900/90 backdrop-blur-sm px-4 py-3 rounded-full shadow-lg">
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (liveSectionIndex > 0) {
+                                        setLiveSectionIndex(liveSectionIndex - 1);
+                                        setLiveProgress(0);
+                                        setLiveIsPlaying(false);
+                                      }
+                                    }}
+                                    disabled={liveSectionIndex === 0}
+                                    className="w-10 h-10 md:w-12 md:h-12 bg-gray-700 text-white rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-lg md:text-xl flex items-center justify-center">
+                                    ⏮
+                                  </button>
+                                  
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setLiveIsPlaying(!liveIsPlaying);
+                                    }}
+                                    className="w-12 h-12 md:w-16 md:h-16 bg-green-600 text-white rounded-full hover:bg-green-700 text-xl md:text-2xl flex items-center justify-center shadow-lg">
+                                    {liveIsPlaying ? '⏸' : '▶'}
+                                  </button>
+                                  
+                                  <button 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (liveSectionIndex < sections.length - 1) {
+                                        setLiveSectionIndex(liveSectionIndex + 1);
+                                        setLiveProgress(0);
+                                        setLiveIsPlaying(false);
+                                      }
+                                    }}
+                                    disabled={liveSectionIndex >= sections.length - 1}
+                                    className="w-10 h-10 md:w-12 md:h-12 bg-gray-700 text-white rounded-full hover:bg-gray-600 disabled:opacity-30 disabled:cursor-not-allowed text-lg md:text-xl flex items-center justify-center">
+                                    ⏭
+                                  </button>
+                                </div>
+                              </div>
+                              
                               <div className="bg-gray-300 h-2 shrink-0">
                                 <div className="bg-green-500 h-full transition-all duration-300" style={{width: liveProgress + '%'}} />
                               </div>
                               
-                              <div className="flex-1 overflow-y-auto p-6 pt-4 pb-6 flex justify-center">
+                              <div className={`flex-1 overflow-y-auto p-6 pb-6 flex justify-center transition-all duration-300 ${liveIsPlaying && !menuVisible ? 'pt-4' : 'pt-24 md:pt-28'}`}>
                                 <div className="max-w-4xl w-full flex flex-col items-center">
                                   <div className="text-center mb-6">
                                     <h1 className="text-5xl md:text-6xl font-bold text-blue-700 mb-2">{section.name}</h1>
@@ -2603,7 +2637,7 @@ const copyToClipboard = async () => {
                                 onClick={() => loadSong(song)}>
                                 <div className="flex items-start justify-between gap-2">
                                   {song.pinned && (
-                                    <div className="cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
+                                    <div className="hidden md:flex cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
                                       <Menu size={16} />
                                     </div>
                                   )}
