@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.8-CLOSE-BUTTON-IN-SIDEBAR - Generated: 2026-01-16 07:00:00 -->
+<!-- Version: v10.9.2-ARROW-BUTTONS-ONLY - Generated: 2026-01-19 02:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -652,6 +652,110 @@
             setDraggedSong(null);
           };
 
+          // Move pinned song up in order
+          const movePinnedSongUp = (songId, e) => {
+            e.stopPropagation();
+            const pinnedSongs = songs.filter(s => s.pinned);
+            const unpinnedSongs = songs.filter(s => !s.pinned);
+            const currentIndex = pinnedSongs.findIndex(s => s.id === songId);
+            
+            if (currentIndex > 0) {
+              const newPinnedSongs = [...pinnedSongs];
+              [newPinnedSongs[currentIndex - 1], newPinnedSongs[currentIndex]] = 
+                [newPinnedSongs[currentIndex], newPinnedSongs[currentIndex - 1]];
+              
+              const newSongs = [...newPinnedSongs, ...unpinnedSongs];
+              setSongs(newSongs);
+              localStorage.setItem('chordTransposerSongs', JSON.stringify(newSongs));
+            }
+          };
+
+          // Move pinned song down in order
+          const movePinnedSongDown = (songId, e) => {
+            e.stopPropagation();
+            const pinnedSongs = songs.filter(s => s.pinned);
+            const unpinnedSongs = songs.filter(s => !s.pinned);
+            const currentIndex = pinnedSongs.findIndex(s => s.id === songId);
+            
+            if (currentIndex < pinnedSongs.length - 1) {
+              const newPinnedSongs = [...pinnedSongs];
+              [newPinnedSongs[currentIndex], newPinnedSongs[currentIndex + 1]] = 
+                [newPinnedSongs[currentIndex + 1], newPinnedSongs[currentIndex]];
+              
+              const newSongs = [...newPinnedSongs, ...unpinnedSongs];
+              setSongs(newSongs);
+              localStorage.setItem('chordTransposerSongs', JSON.stringify(newSongs));
+            }
+          };
+
+          // Go to next pinned song
+          const goToNextSong = () => {
+            const pinnedSongs = songs.filter(s => s.pinned);
+            if (pinnedSongs.length === 0) return;
+            
+            const currentIndex = pinnedSongs.findIndex(s => s.id === currentSong?.id);
+            const nextIndex = (currentIndex + 1) % pinnedSongs.length; // Wrap around to first
+            const nextSong = pinnedSongs[nextIndex];
+            
+            if (nextSong) {
+              // Save current view state
+              const wasInPerformanceMode = viewMode;
+              const wasInLiveMode = showLiveMode;
+              
+              // Load the song
+              loadSong(nextSong);
+              
+              // Restore Performance/Live Mode
+              if (wasInPerformanceMode) {
+                setViewMode(true);
+              }
+              if (wasInLiveMode) {
+                setShowLiveMode(true);
+                setLiveSectionIndex(0);
+                setLiveProgress(0);
+                setLiveIsPlaying(false);
+                if (window.liveTimer) {
+                  clearInterval(window.liveTimer);
+                  window.liveTimer = null;
+                }
+              }
+            }
+          };
+
+          // Go to previous pinned song
+          const goToPreviousSong = () => {
+            const pinnedSongs = songs.filter(s => s.pinned);
+            if (pinnedSongs.length === 0) return;
+            
+            const currentIndex = pinnedSongs.findIndex(s => s.id === currentSong?.id);
+            const prevIndex = currentIndex <= 0 ? pinnedSongs.length - 1 : currentIndex - 1; // Wrap around to last
+            const prevSong = pinnedSongs[prevIndex];
+            
+            if (prevSong) {
+              // Save current view state
+              const wasInPerformanceMode = viewMode;
+              const wasInLiveMode = showLiveMode;
+              
+              // Load the song
+              loadSong(prevSong);
+              
+              // Restore Performance/Live Mode
+              if (wasInPerformanceMode) {
+                setViewMode(true);
+              }
+              if (wasInLiveMode) {
+                setShowLiveMode(true);
+                setLiveSectionIndex(0);
+                setLiveProgress(0);
+                setLiveIsPlaying(false);
+                if (window.liveTimer) {
+                  clearInterval(window.liveTimer);
+                  window.liveTimer = null;
+                }
+              }
+            }
+          };
+
           const playMetronomeClick = (isAccent = false) => {
             if (!audioContextRef.current) {
               audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -911,6 +1015,9 @@
           };
 
           const transposeChord = (chord, semitones, songKey = 'C') => {
+            // If no transposition, return original chord exactly as written
+            if (semitones === 0) return chord;
+            
             const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
             const flatNotes = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
             const flatToSharp = { 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#', 'Bb': 'A#' };
@@ -1903,7 +2010,35 @@ const copyToClipboard = async () => {
                           {currentSong.timeSignature && <span> • {currentSong.timeSignature}</span>}
                         </div>
                       </div>
-                      <div className="flex gap-2 items-center">
+                      <div className="flex gap-2 items-center flex-wrap">
+                        {/* Previous/Next Song buttons - navigate through pinned songs */}
+                        {(() => {
+                          const pinnedSongs = songs.filter(s => s.pinned);
+                          const hasPinnedSongs = pinnedSongs.length > 0;
+                          const currentIndex = pinnedSongs.findIndex(s => s.id === currentSong?.id);
+                          const isInPinnedList = currentIndex !== -1;
+                          
+                          return hasPinnedSongs && isInPinnedList && (
+                            <>
+                              <button 
+                                onClick={goToPreviousSong}
+                                className="flex items-center justify-center bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                                title="Previous song">
+                                ◀
+                              </button>
+                              <span className="text-sm text-gray-600 px-2">
+                                {currentIndex + 1}/{pinnedSongs.length}
+                              </span>
+                              <button 
+                                onClick={goToNextSong}
+                                className="flex items-center justify-center bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 text-sm"
+                                title="Next song">
+                                ▶
+                              </button>
+                            </>
+                          );
+                        })()}
+                        
                         <button onClick={() => {
                           if (!showLiveMode) {
                             // Entering Live Mode - reset to first section
@@ -2058,6 +2193,34 @@ const copyToClipboard = async () => {
                                         </button>
                                       )}
                                     </div>
+                                    
+                                    {/* Previous/Next Song buttons */}
+                                    {(() => {
+                                      const pinnedSongs = songs.filter(s => s.pinned);
+                                      const hasPinnedSongs = pinnedSongs.length > 0;
+                                      const currentIndex = pinnedSongs.findIndex(s => s.id === currentSong?.id);
+                                      const isInPinnedList = currentIndex !== -1;
+                                      
+                                      return hasPinnedSongs && isInPinnedList && (
+                                        <div className="flex items-center gap-2">
+                                          <button 
+                                            onClick={goToPreviousSong}
+                                            className="flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs"
+                                            title="Previous song">
+                                            ◀
+                                          </button>
+                                          <span className="text-xs text-gray-400">
+                                            {currentIndex + 1}/{pinnedSongs.length}
+                                          </span>
+                                          <button 
+                                            onClick={goToNextSong}
+                                            className="flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 text-xs"
+                                            title="Next song">
+                                            ▶
+                                          </button>
+                                        </div>
+                                      );
+                                    })()}
                                     
                                     {/* Exit button - visible on mobile in row 1 */}
                                     <button 
@@ -2456,6 +2619,25 @@ const copyToClipboard = async () => {
                                     </div>
                                   </div>
                                   <div className="flex flex-col gap-1">
+                                    {/* Move up/down buttons for pinned songs - visible on mobile */}
+                                    {song.pinned && (
+                                      <div className="flex md:hidden flex-col gap-1">
+                                        <button 
+                                          onClick={(e) => movePinnedSongUp(song.id, e)} 
+                                          className="text-gray-400 hover:text-blue-600 p-1"
+                                          title="Move up"
+                                        >
+                                          ↑
+                                        </button>
+                                        <button 
+                                          onClick={(e) => movePinnedSongDown(song.id, e)} 
+                                          className="text-gray-400 hover:text-blue-600 p-1"
+                                          title="Move down"
+                                        >
+                                          ↓
+                                        </button>
+                                      </div>
+                                    )}
                                     <button onClick={(e) => togglePin(song.id, e)} className="text-gray-400 hover:text-yellow-500" title={song.pinned ? "Unpin" : "Pin"}>
                                       {song.pinned ? '📌' : '📍'}
                                     </button>
