@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v10.10.1-IPAD-ARROWS-FIX - Generated: 2026-01-19 10:00:00 -->
+<!-- Version: v11.0.2-TONEBOOK-ICON - Generated: 2026-01-20 04:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -59,6 +59,25 @@
                 <path d="M9 18V5l12-2v13"></path>
                 <circle cx="6" cy="18" r="3"></circle>
                 <circle cx="18" cy="16" r="3"></circle>
+            </svg>
+        );
+        
+        // ToneBook Logo - Book with musical note (from official icon)
+        const ToneBookIcon = ({ size = 24, className = "" }) => (
+            <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none">
+                {/* Book binding (left edge) */}
+                <rect x="4" y="3" width="2" height="18" rx="0.5" fill="currentColor" opacity="0.6"/>
+                {/* Book pages */}
+                <rect x="6" y="3" width="10" height="18" rx="1.5" fill="currentColor" opacity="0.15" stroke="currentColor" strokeWidth="1.5"/>
+                {/* Staff lines on book */}
+                <line x1="8" y1="9" x2="14" y2="9" stroke="currentColor" strokeWidth="0.8" opacity="0.3"/>
+                <line x1="8" y1="11" x2="14" y2="11" stroke="currentColor" strokeWidth="0.8" opacity="0.3"/>
+                <line x1="8" y1="13" x2="14" y2="13" stroke="currentColor" strokeWidth="0.8" opacity="0.3"/>
+                <line x1="8" y1="15" x2="14" y2="15" stroke="currentColor" strokeWidth="0.8" opacity="0.3"/>
+                {/* Musical note (right side) */}
+                <circle cx="17" cy="14" r="2" fill="currentColor"/>
+                <ellipse cx="17" cy="14.2" rx="2.2" ry="1.5" fill="currentColor"/>
+                <rect x="19" y="7" width="2" height="7.5" rx="1" fill="currentColor"/>
             </svg>
         );
         
@@ -165,6 +184,20 @@
                 <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
         );
+        
+        const ChevronLeft = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+        );
+        
+        const Upload = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+        );
 
         const ChordTransposer = () => {
 
@@ -265,6 +298,7 @@
           const [songKey, setSongKey] = useState('');
           const [bpm, setBpm] = useState('');
           const [timeSignature, setTimeSignature] = useState('');
+          const [artist, setArtist] = useState(''); // New artist state
           const [transposition, setTransposition] = useState(0);
           const [showNewSong, setShowNewSong] = useState(false);
           const [viewMode, setViewMode] = useState(false);
@@ -297,6 +331,12 @@
           const [liveProgress, setLiveProgress] = useState(0);
           const [liveFontSize, setLiveFontSize] = useState(130);
           const [metronomeBeat, setMetronomeBeat] = useState(0);
+          const [menuCollapsed, setMenuCollapsed] = useState(false); // Main menu collapse state
+          const [expandedMenuSections, setExpandedMenuSections] = useState({
+            createSong: false,
+            importExport: false,
+            songs: true // Songs section expanded by default
+          });
           const [metronomeAudioMuted, setMetronomeAudioMuted] = useState(true);
           const [performanceFontSize, setPerformanceFontSize] = useState(100);
           const [menuVisible, setMenuVisible] = useState(true);
@@ -420,12 +460,15 @@
             const savedSongs = localStorage.getItem('chordTransposerSongs');
             if (savedSongs) {
               const loadedSongs = JSON.parse(savedSongs);
-              // Ensure songs have folders array
-              const songsWithFolders = loadedSongs.map(s => ({
+              // Migrate songs: add artist field and folders array
+              const migratedSongs = loadedSongs.map(s => ({
                 ...s,
-                folders: s.folders || []
+                folders: s.folders || [],
+                artist: s.artist || 'Unknown Artist' // Migration: all existing songs to Unknown Artist
               }));
-              setSongs(songsWithFolders);
+              setSongs(migratedSongs);
+              // Save migrated data
+              localStorage.setItem('chordTransposerSongs', JSON.stringify(migratedSongs));
             }
             
             const savedFolders = localStorage.getItem('chordTransposerFolders');
@@ -450,6 +493,7 @@
               originalKey: detectedKey,
               bpm: bpm.trim(),
               timeSignature: timeSignature.trim(),
+              artist: (artist || '').trim() || 'Unknown Artist', // New artist field
               pinned: currentSong?.pinned || false,
               folders: currentSong?.folders || [],
               createdAt: currentSong?.createdAt || new Date().toISOString()
@@ -458,7 +502,7 @@
             const updatedSongs = currentSong 
               ? songs.map(s => s.id === song.id ? song : s)
               : [...songs, song];
-            console.log("Saving song with folders:", song.folders);
+            console.log("Saving song with artist:", song.artist);
             
             setSongs(updatedSongs);
             localStorage.setItem('chordTransposerSongs', JSON.stringify(updatedSongs));
@@ -488,6 +532,7 @@
             setSongKey(song.originalKey);
             setBpm(song.bpm || '');
             setTimeSignature(song.timeSignature || '');
+            setArtist(song.artist || 'Unknown Artist'); // Load artist
             setTransposition(0);
             setEditMode(false);
             setShowNewSong(false);
@@ -503,6 +548,7 @@
             setSongKey('');
             setBpm('');
             setTimeSignature('');
+            setArtist(''); // Reset artist
             setTransposition(0);
             setEditMode(true);
             setShowNewSong(true);
@@ -1735,12 +1781,19 @@ const copyToClipboard = async () => {
             .filter(song => {
               // Filter by search query
               const matchesSearch = song.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                   song.originalKey.toLowerCase().includes(searchQuery.toLowerCase());
+                                   song.originalKey.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                   (song.artist && song.artist.toLowerCase().includes(searchQuery.toLowerCase()));
               if (!matchesSearch) return false;
               
-              // Filter by selected folder
+              // Filter by selected folder/artist
               if (selectedFolder === 'all') return true;
               if (selectedFolder === 'uncategorized') return !song.folders || song.folders.length === 0;
+              
+              // Check if it's an artist folder
+              const songArtist = song.artist || 'Unknown Artist';
+              if (selectedFolder === songArtist) return true;
+              
+              // Check if it's a legacy folder
               return song.folders && song.folders.includes(selectedFolder);
             })
             .sort((a, b) => {
@@ -1998,6 +2051,7 @@ const copyToClipboard = async () => {
                       <div className="song-info-mobile">
                         <h2 className="text-2xl font-bold">{currentSong.title}</h2>
                         <div className="text-sm text-gray-300 mt-1">
+                          {currentSong.artist && currentSong.artist !== 'Unknown Artist' && <span className="font-medium">{currentSong.artist} • </span>}
                           {transposition !== 0 ? (<span>Original: {currentSong.originalKey}, Current: {getCurrentKey()}</span>) : 
                            (<span>Key: {currentSong.originalKey}</span>)}
                           {currentSong.bpm && <span> • {currentSong.bpm} BPM</span>}
@@ -2136,9 +2190,12 @@ const copyToClipboard = async () => {
                   {!menuVisible && (
                     <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900 bg-opacity-95 text-white px-4 py-3 shadow-lg">
                       <div className="max-w-4xl mx-auto flex items-center justify-between">
-                        {/* Left side: Song title */}
+                        {/* Left side: Song title and artist */}
                         <div className="flex-1">
                           <h3 className="text-lg md:text-xl font-bold">{currentSong.title}</h3>
+                          {currentSong.artist && currentSong.artist !== 'Unknown Artist' && (
+                            <div className="text-xs md:text-sm text-gray-400">{currentSong.artist}</div>
+                          )}
                           {/* Metronome below title when active */}
                           {metronomeActive && (
                             <div className="flex items-center gap-2 mt-1">
@@ -2212,6 +2269,7 @@ const copyToClipboard = async () => {
                                 <div className="mb-2 pb-2 border-b border-gray-700">
                                   <h2 className="text-base md:text-lg font-bold">{currentSong.title}</h2>
                                   <div className="text-xs text-gray-400 mt-1">
+                                    {currentSong.artist && currentSong.artist !== 'Unknown Artist' && <span className="font-medium">{currentSong.artist} • </span>}
                                     Key: {currentSong.originalKey}
                                     {currentSong.bpm && <span> • {currentSong.bpm} BPM</span>}
                                     {currentSong.timeSignature && <span> • {currentSong.timeSignature}</span>}
@@ -2521,201 +2579,298 @@ const copyToClipboard = async () => {
               ) : (
                 <>
                   {/* Sidebar - Responsive: desktop always visible, mobile hidden until hamburger clicked */}
-                  <div className={`sidebar-container w-80 bg-white border-r border-gray-200 flex-col md:flex ${mobileMenuOpen ? 'mobile-open flex' : 'hidden md:flex'}`}>
+                  <div className={`sidebar-container ${menuCollapsed ? 'w-16' : 'w-80'} bg-white border-r border-gray-200 flex-col md:flex transition-all duration-300 ${mobileMenuOpen ? 'mobile-open flex' : 'hidden md:flex'}`}>
+                    {/* Header with ToneBook title and collapse button */}
                     <div className="p-4 border-b border-gray-200">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <Music className="text-blue-600" size={24} />
-                          <h1 className="text-xl font-bold">Song Library</h1>
+                          <ToneBookIcon className="text-blue-600" size={24} />
+                          {!menuCollapsed && <h1 className="text-xl font-bold">ToneBook</h1>}
                         </div>
-                        {/* Close button - only visible on mobile */}
-                        <button 
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="md:hidden p-2 hover:bg-gray-100 rounded-lg text-gray-600"
-                          aria-label="Close menu"
-                        >
-                          <X size={24} />
-                        </button>
-                      </div>
-                      <button onClick={startNewSong} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                        <Plus size={20} />New Song
-                      </button>
-                      
-                      <div className="mt-4 space-y-2">
-                        <button onClick={exportAllSongs} className="w-full flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
-                          <Download size={18} />Export All Songs
-                        </button>
-                        <label className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 cursor-pointer text-sm">
-                          <input type="file" accept=".tone" onChange={importAllSongs} className="hidden" />
-                          <Plus size={18} />Import Songs
-                        </label>
-                      </div>
-                    </div>
-                    
-                    <div className="p-4 border-b border-gray-200">
-                      <input type="text" placeholder="Search songs..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-                    </div>
-                    
-                    <div className="flex-1 overflow-y-auto p-4">
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-sm font-semibold text-gray-700">FOLDERS</h3>
-                          <button onClick={() => setShowNewFolderModal(true)} className="text-blue-600 hover:text-blue-700" title="New Folder">
-                            <FolderPlus size={18} />
+                        <div className="flex items-center gap-2">
+                          {/* Collapse/Expand button - visible on all devices */}
+                          <button 
+                            onClick={() => setMenuCollapsed(!menuCollapsed)}
+                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                            title={menuCollapsed ? "Expand menu" : "Collapse menu"}
+                          >
+                            {menuCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+                          </button>
+                          {/* Close button - only visible on mobile */}
+                          <button 
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="md:hidden p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                            aria-label="Close menu"
+                          >
+                            <X size={24} />
                           </button>
                         </div>
-                        
-                        <div className="space-y-1">
-                          <div 
-                            onClick={() => setSelectedFolder('all')}
-                            className={`px-3 py-2 rounded cursor-pointer flex items-center gap-2 ${selectedFolder === 'all' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}>
-                            <Music size={16} />
-                            <span className="text-sm">All Songs</span>
-                            <span className="ml-auto text-xs text-gray-500">{songs.length}</span>
-                          </div>
-                          
-                          {folders.map(folder => {
-                            const folderSongs = songs.filter(s => s.folders && s.folders.includes(folder.id));
-                            return (
-                              <div key={folder.id}>
-                                <div 
-                                  onDragOver={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    e.currentTarget.style.backgroundColor = '#DBEAFE';
-                                  }}
-                                  onDragLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '';
-                                  }}
-                                  onDrop={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    e.currentTarget.style.backgroundColor = '';
-                                    const songId = e.dataTransfer.getData('songId');
-                                    console.log('📁 DROP on folder:', folder.name, 'songId:', songId);
-                                    if (songId) {
-                                      const updatedSongs = songs.map(s => {
-                                        if (s.id === songId) {
-                                          const folders = s.folders || [];
-                                          if (!folders.includes(folder.id)) {
-                                            console.log('📁 Adding song to folder');
-                                            return { ...s, folders: [...folders, folder.id] };
-                                          }
-                                        }
-                                        return s;
-                                      });
-                                      setSongs(updatedSongs);
-                                      localStorage.setItem('chordTransposerSongs', JSON.stringify(updatedSongs));
-                                    }
-                                  }}
-                                  className={`px-3 py-2 rounded cursor-pointer flex items-center gap-2 ${selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}>
-                                  <button onClick={(e) => { e.stopPropagation(); toggleFolderCollapse(folder.id); }} className="hover:text-gray-600">
-                                    {collapsedFolders[folder.id] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-                                  </button>
-                                  <Folder size={16} />
-                                  <span onClick={() => setSelectedFolder(folder.id)} className="text-sm flex-1">{folder.name}</span>
-                                  <span className="text-xs text-gray-500">{folderSongs.length}</span>
-                                  <button onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }} className="text-red-600 hover:text-red-700">
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                          
-                          <div 
-                            onClick={() => setSelectedFolder('uncategorized')}
-                            className={`px-3 py-2 rounded cursor-pointer flex items-center gap-2 ${selectedFolder === 'uncategorized' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-100'}`}>
-                            <FileText size={16} />
-                            <span className="text-sm">Uncategorized</span>
-                            <span className="ml-auto text-xs text-gray-500">{songs.filter(s => !s.folders || s.folders.length === 0).length}</span>
-                          </div>
-                        </div>
                       </div>
                       
-                      <div className="border-t border-gray-200 pt-4 mt-4">
-                        <h3 className="text-sm font-semibold text-gray-700 mb-2">SONGS</h3>
-                        {filteredSongs.length === 0 ? (
-                          <p className="text-gray-400 text-sm text-center mt-8">{searchQuery ? 'No songs found' : 'No songs yet. Create your first one!'}</p>
-                        ) : (
-                          <div className="space-y-2">
-                            {filteredSongs.map(song => (
-                              <div key={song.id}
-                                draggable="true"
-                                onDragStart={(e) => {
-                                  if (song.pinned) {
-                                    handleDragStart(e, song);
-                                  } else {
-                                    // For folder drag & drop
-                                    console.log('🎵 DRAG START:', song.title, 'ID:', song.id);
-                                    e.dataTransfer.setData('songId', song.id);
-                                    e.dataTransfer.effectAllowed = 'copy';
-                                    e.currentTarget.style.opacity = '0.5';
+                      {!menuCollapsed && (
+                        <div className="p-4 border-b border-gray-200">
+                          <input type="text" placeholder="Search songs..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {!menuCollapsed && (
+                      <div className="flex-1 overflow-y-auto">
+                        {/* Create Song Section */}
+                        <div className="border-b border-gray-200">
+                          <button 
+                            onClick={() => setExpandedMenuSections({...expandedMenuSections, createSong: !expandedMenuSections.createSong})}
+                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Plus size={18} className="text-blue-600" />
+                              <span className="font-medium text-sm">Create Song</span>
+                            </div>
+                            {expandedMenuSections.createSong ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </button>
+                          {expandedMenuSections.createSong && (
+                            <div className="px-4 pb-3">
+                              <button onClick={startNewSong} className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                                <Plus size={18} />New Song
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Import/Export Section */}
+                        <div className="border-b border-gray-200">
+                          <button 
+                            onClick={() => setExpandedMenuSections({...expandedMenuSections, importExport: !expandedMenuSections.importExport})}
+                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Download size={18} className="text-green-600" />
+                              <span className="font-medium text-sm">Import/Export</span>
+                            </div>
+                            {expandedMenuSections.importExport ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </button>
+                          {expandedMenuSections.importExport && (
+                            <div className="px-4 pb-3 space-y-2">
+                              <button onClick={exportAllSongs} className="w-full flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                                <Download size={16} />Export All
+                              </button>
+                              <label className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 cursor-pointer text-sm">
+                                <input type="file" accept=".tone" onChange={importAllSongs} className="hidden" />
+                                <Upload size={16} />Import Songs
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Songs Section - Organized by Artist */}
+                        <div className="border-b border-gray-200">
+                          <button 
+                            onClick={() => setExpandedMenuSections({...expandedMenuSections, songs: !expandedMenuSections.songs})}
+                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Music size={18} className="text-blue-600" />
+                              <span className="font-medium text-sm">Songs</span>
+                            </div>
+                            {expandedMenuSections.songs ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </button>
+                          {expandedMenuSections.songs && (
+                            <div className="pb-3">
+                              {/* All Songs */}
+                              <div 
+                                onClick={() => setSelectedFolder('all')}
+                                className={`px-4 py-2 cursor-pointer flex items-center gap-2 ${selectedFolder === 'all' ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-50'}`}
+                              >
+                                <Music size={16} />
+                                <span className="text-sm flex-1">All Songs</span>
+                                <span className="text-xs text-gray-500">{songs.length}</span>
+                              </div>
+                              
+                              {/* Artists Folders */}
+                              {(() => {
+                                // Get unique artists and sort
+                                const artistsMap = {};
+                                songs.forEach(song => {
+                                  const artist = song.artist || 'Unknown Artist';
+                                  if (!artistsMap[artist]) {
+                                    artistsMap[artist] = [];
                                   }
-                                }}
-                                onDragOver={(e) => song.pinned && handleDragOver(e, song)}
-                                onDragEnd={(e) => {
-                                  handleDragEnd(e);
-                                  e.currentTarget.style.opacity = '1';
-                                }}
-                                className={`p-3 rounded-lg border cursor-pointer hover:bg-gray-50 ${currentSong?.id === song.id ? 'bg-blue-50 border-blue-300' : 'border-gray-200'} ${song.pinned ? 'border-l-4 border-l-yellow-500' : ''}`}
-                                onClick={() => loadSong(song)}>
-                                <div className="flex items-start justify-between gap-2">
-                                  {song.pinned && (
-                                    <div className="hidden lg:flex cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
-                                      <Menu size={16} />
+                                  artistsMap[artist].push(song);
+                                });
+                                
+                                const artists = Object.keys(artistsMap).sort((a, b) => {
+                                  // Unknown Artist always at the end
+                                  if (a === 'Unknown Artist') return 1;
+                                  if (b === 'Unknown Artist') return -1;
+                                  return a.localeCompare(b);
+                                });
+                                
+                                return artists.map(artist => {
+                                  const artistSongs = artistsMap[artist];
+                                  const pinnedCount = artistSongs.filter(s => s.pinned).length;
+                                  
+                                  return (
+                                    <div key={artist}>
+                                      <div 
+                                        onClick={() => setSelectedFolder(artist)}
+                                        className={`px-4 py-2 cursor-pointer flex items-center gap-2 ${selectedFolder === artist ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-50'}`}
+                                      >
+                                        <button 
+                                          onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            setCollapsedFolders({...collapsedFolders, [artist]: !collapsedFolders[artist]});
+                                          }} 
+                                          className="hover:text-gray-600"
+                                        >
+                                          {collapsedFolders[artist] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                                        </button>
+                                        <Folder size={16} />
+                                        <span className="text-sm flex-1">{artist}</span>
+                                        <span className="text-xs text-gray-500">{artistSongs.length}</span>
+                                      </div>
                                     </div>
-                                  )}
-                                  <div className="flex-1">
-                                    <div className="font-medium text-sm flex items-center gap-2">
-                                      {song.pinned && <span className="text-yellow-500">📌</span>}
-                                      {song.title}
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-1">
-                                      Key: {song.originalKey}
-                                      {song.bpm && ` • ${song.bpm} BPM`}
-                                      {song.timeSignature && ` • ${song.timeSignature}`}
-                                    </div>
+                                  );
+                                });
+                              })()}
+                              
+                              {/* Old Folders (kept for backwards compatibility) */}
+                              {folders.length > 0 && (
+                                <>
+                                  <div className="px-4 py-2 mt-2">
+                                    <div className="text-xs font-semibold text-gray-500 uppercase">Legacy Folders</div>
                                   </div>
-                                  <div className="flex flex-col gap-1">
-                                    {/* Move up/down buttons for pinned songs - visible on mobile and tablet */}
+                                  {folders.map(folder => {
+                                    const folderSongs = songs.filter(s => s.folders && s.folders.includes(folder.id));
+                                    return (
+                                      <div key={folder.id}>
+                                        <div 
+                                          onClick={() => setSelectedFolder(folder.id)}
+                                          className={`px-4 py-2 cursor-pointer flex items-center gap-2 ${selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-50'}`}
+                                        >
+                                          <button onClick={(e) => { e.stopPropagation(); toggleFolderCollapse(folder.id); }} className="hover:text-gray-600">
+                                            {collapsedFolders[folder.id] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                                          </button>
+                                          <Folder size={16} />
+                                          <span className="text-sm flex-1">{folder.name}</span>
+                                          <span className="text-xs text-gray-500">{folderSongs.length}</span>
+                                          <button onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }} className="text-red-600 hover:text-red-700">
+                                            <Trash2 size={14} />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Songs List */}
+                        <div className="p-4">
+                          {filteredSongs.length === 0 ? (
+                            <p className="text-gray-400 text-sm text-center mt-8">{searchQuery ? 'No songs found' : 'No songs yet. Create your first one!'}</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {filteredSongs.map(song => (
+                                <div key={song.id}
+                                  draggable="true"
+                                  onDragStart={(e) => {
+                                    if (song.pinned) {
+                                      handleDragStart(e, song);
+                                    }
+                                    e.currentTarget.style.opacity = '0.5';
+                                  }}
+                                  onDragOver={(e) => song.pinned && handleDragOver(e, song)}
+                                  onDragEnd={(e) => {
+                                    handleDragEnd(e);
+                                    e.currentTarget.style.opacity = '1';
+                                  }}
+                                  className={`p-3 rounded-lg border cursor-pointer hover:bg-gray-50 ${currentSong?.id === song.id ? 'bg-blue-50 border-blue-300' : 'border-gray-200'} ${song.pinned ? 'border-l-4 border-l-yellow-500' : ''}`}
+                                  onClick={() => loadSong(song)}>
+                                  <div className="flex items-start justify-between gap-2">
                                     {song.pinned && (
-                                      <div className="flex lg:hidden flex-col gap-1">
-                                        <button 
-                                          onClick={(e) => movePinnedSongUp(song.id, e)} 
-                                          className="text-gray-400 hover:text-blue-600 p-1"
-                                          title="Move up"
-                                        >
-                                          ↑
-                                        </button>
-                                        <button 
-                                          onClick={(e) => movePinnedSongDown(song.id, e)} 
-                                          className="text-gray-400 hover:text-blue-600 p-1"
-                                          title="Move down"
-                                        >
-                                          ↓
-                                        </button>
+                                      <div className="hidden lg:flex cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
+                                        <Menu size={16} />
                                       </div>
                                     )}
-                                    <button onClick={(e) => togglePin(song.id, e)} className="text-gray-400 hover:text-yellow-500" title={song.pinned ? "Unpin" : "Pin"}>
-                                      {song.pinned ? '📌' : '📍'}
-                                    </button>
-                                    <button onClick={(e) => { e.stopPropagation(); openMoveSongModal(song); }} className="text-gray-400 hover:text-blue-600" title="Add to folder">
-                                      <Folder size={14} />
-                                    </button>
+                                    <div className="flex-1">
+                                      <div className="font-medium text-sm flex items-center gap-2">
+                                        {song.pinned && <span className="text-yellow-500">📌</span>}
+                                        {song.title}
+                                      </div>
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {song.artist && song.artist !== 'Unknown Artist' && <span>{song.artist} • </span>}
+                                        Key: {song.originalKey}
+                                        {song.bpm && ` • ${song.bpm} BPM`}
+                                        {song.timeSignature && ` • ${song.timeSignature}`}
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                      {/* Move up/down buttons for pinned songs - visible on mobile and tablet */}
+                                      {song.pinned && (
+                                        <div className="flex lg:hidden flex-col gap-1">
+                                          <button 
+                                            onClick={(e) => movePinnedSongUp(song.id, e)} 
+                                            className="text-gray-400 hover:text-blue-600 p-1"
+                                            title="Move up"
+                                          >
+                                            ↑
+                                          </button>
+                                          <button 
+                                            onClick={(e) => movePinnedSongDown(song.id, e)} 
+                                            className="text-gray-400 hover:text-blue-600 p-1"
+                                            title="Move down"
+                                          >
+                                            ↓
+                                          </button>
+                                        </div>
+                                      )}
+                                      <button onClick={(e) => togglePin(song.id, e)} className="text-gray-400 hover:text-yellow-500" title={song.pinned ? "Unpin" : "Pin"}>
+                                        {song.pinned ? '📌' : '📍'}
+                                      </button>
+                                      {folders.length > 0 && (
+                                        <button onClick={(e) => { e.stopPropagation(); openMoveSongModal(song); }} className="text-gray-400 hover:text-blue-600" title="Add to folder">
+                                          <Folder size={14} />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
+                                  <button onClick={(e) => { e.stopPropagation(); deleteSong(song.id); }}
+                                    className="mt-2 text-red-600 hover:text-red-700 text-xs flex items-center gap-1">
+                                    <Trash2 size={12} />Delete
+                                  </button>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); deleteSong(song.id); }}
-                                  className="mt-2 text-red-600 hover:text-red-700 text-xs flex items-center gap-1">
-                                  <Trash2 size={12} />Delete
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    
+                    {/* Collapsed menu - just icons */}
+                    {menuCollapsed && (
+                      <div className="flex-1 flex flex-col items-center py-4 gap-4">
+                        <button onClick={startNewSong} className="p-3 hover:bg-gray-100 rounded-lg" title="New Song">
+                          <Plus size={24} className="text-blue-600" />
+                        </button>
+                        <button onClick={exportAllSongs} className="p-3 hover:bg-gray-100 rounded-lg" title="Export">
+                          <Download size={24} className="text-green-600" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setMenuCollapsed(false); // Expand menu
+                            setSelectedFolder('all'); // Go to All Songs
+                            setExpandedMenuSections({...expandedMenuSections, songs: true}); // Expand Songs section
+                          }} 
+                          className="p-3 hover:bg-gray-100 rounded-lg" 
+                          title="All Songs"
+                        >
+                          <Music size={24} className="text-blue-600" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 flex flex-col">
@@ -2744,6 +2899,13 @@ const copyToClipboard = async () => {
                             <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
                             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
                               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Song title" />
+                          </div>
+                          
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Artist (optional)</label>
+                            <input type="text" value={artist} onChange={(e) => setArtist(e.target.value)}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              placeholder="e.g., Elevation Worship, Hillsong (leave empty for Unknown Artist)" />
                           </div>
                           
                           <div className="grid grid-cols-2 gap-4 mb-4">
@@ -2794,6 +2956,7 @@ const copyToClipboard = async () => {
                             <div className="song-info-mobile">
                               <h2 className="text-2xl font-bold">{currentSong.title}</h2>
                               <div className="text-sm text-gray-600 mt-1">
+                                {currentSong.artist && currentSong.artist !== 'Unknown Artist' && <span className="font-medium">{currentSong.artist} • </span>}
                                 {transposition !== 0 ? (<span>Original: {currentSong.originalKey}, Current: {getCurrentKey()}</span>) : 
                                  (<span>Key: {currentSong.originalKey}</span>)}
                                 {currentSong.bpm && <span> • {currentSong.bpm} BPM</span>}
