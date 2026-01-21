@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v11.3.2-EXPORT-FIXED-COMPACT - Generated: 2026-01-20 12:00:00 -->
+<!-- Version: v11.3.4-DUAL-EMBED - Generated: 2026-01-20 14:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -307,6 +307,9 @@
           const [bpm, setBpm] = useState('');
           const [timeSignature, setTimeSignature] = useState('');
           const [artist, setArtist] = useState(''); // New artist state
+          const [videoEmbedUrl, setVideoEmbedUrl] = useState(''); // YouTube/video embed URL
+          const [audioEmbedUrl, setAudioEmbedUrl] = useState(''); // Spotify/audio embed URL
+          const [embedPreference, setEmbedPreference] = useState('video'); // User's preference: 'video' or 'audio'
           const [transposition, setTransposition] = useState(0);
           const [showNewSong, setShowNewSong] = useState(false);
           const [viewMode, setViewMode] = useState(false);
@@ -334,6 +337,8 @@
           const [selectedFolderForImport, setSelectedFolderForImport] = useState(null);
           const [showExportModal, setShowExportModal] = useState(false);
           const [showHelpModal, setShowHelpModal] = useState(false);
+          const [showDeleteModal, setShowDeleteModal] = useState(false);
+          const [deleteConfirmText, setDeleteConfirmText] = useState('');
           const [helpLanguage, setHelpLanguage] = useState('en'); // 'en' or 'es'
           const [showLiveMode, setShowLiveMode] = useState(false);
           const [liveSectionIndex, setLiveSectionIndex] = useState(0);
@@ -344,8 +349,9 @@
           const [menuCollapsed, setMenuCollapsed] = useState(false); // Main menu collapse state
           const [expandedMenuSections, setExpandedMenuSections] = useState({
             createSong: false,
-            importExport: false,
             songs: true, // Songs section expanded by default
+            importExport: false,
+            deleteSongs: false, // Delete section
             allSongs: false, // All Songs submenu collapsed by default
             artists: false, // Artists submenu collapsed by default
             customFolders: false // Custom Folders submenu collapsed by default
@@ -499,6 +505,54 @@
             const chords = extractChords(content);
             const detectedKey = songKey.trim() || detectKey(chords);
             
+            // Process Video Embed (YouTube, etc.)
+            const processEmbedUrl = (url) => {
+              if (!url.trim()) return '';
+              
+              const urlTrimmed = url.trim();
+              
+              // FIRST: If it's already an iframe, extract the src
+              if (urlTrimmed.includes('<iframe')) {
+                const srcMatch = urlTrimmed.match(/src=["']([^"']+)["']/);
+                if (srcMatch) {
+                  let extractedSrc = srcMatch[1];
+                  // Convert youtube.com to youtube-nocookie.com for better compatibility
+                  if (extractedSrc.includes('youtube.com')) {
+                    extractedSrc = extractedSrc.replace('youtube.com', 'youtube-nocookie.com');
+                  }
+                  return extractedSrc;
+                }
+              }
+              
+              // YouTube: convert watch?v= or youtu.be/ to embed (using youtube-nocookie.com)
+              if (urlTrimmed.includes('youtube.com/watch?v=')) {
+                const videoId = urlTrimmed.split('v=')[1]?.split('&')[0];
+                return `https://www.youtube-nocookie.com/embed/${videoId}`;
+              } else if (urlTrimmed.includes('youtu.be/')) {
+                const videoId = urlTrimmed.split('youtu.be/')[1]?.split('?')[0];
+                return `https://www.youtube-nocookie.com/embed/${videoId}`;
+              } else if (urlTrimmed.includes('youtube.com/embed/')) {
+                // Convert regular youtube.com to youtube-nocookie.com
+                return urlTrimmed.replace('youtube.com', 'youtube-nocookie.com');
+              }
+              // Spotify: convert track URL to embed
+              else if (urlTrimmed.includes('spotify.com/track/')) {
+                const trackId = urlTrimmed.split('track/')[1]?.split('?')[0];
+                return `https://open.spotify.com/embed/track/${trackId}`;
+              } else if (urlTrimmed.includes('spotify.com/embed/track/')) {
+                return urlTrimmed; // Already embed format
+              }
+              // Apple Music
+              else if (urlTrimmed.includes('music.apple.com')) {
+                return urlTrimmed; // Use as-is for Apple Music
+              }
+              
+              return urlTrimmed; // Use as-is
+            };
+            
+            const processedVideoEmbed = processEmbedUrl(videoEmbedUrl);
+            const processedAudioEmbed = processEmbedUrl(audioEmbedUrl);
+            
             const song = {
               id: currentSong?.id || Date.now().toString(),
               title: title.trim(),
@@ -506,7 +560,9 @@
               originalKey: detectedKey,
               bpm: bpm.trim(),
               timeSignature: timeSignature.trim(),
-              artist: (artist || '').trim() || 'Unknown Artist', // New artist field
+              artist: (artist || '').trim() || 'Unknown Artist',
+              videoEmbedUrl: processedVideoEmbed,
+              audioEmbedUrl: processedAudioEmbed,
               pinned: currentSong?.pinned || false,
               folders: currentSong?.folders || [],
               createdAt: currentSong?.createdAt || new Date().toISOString()
@@ -538,6 +594,69 @@
             }
           };
 
+          // Bulk Delete Functions
+          const deleteEntireLibrary = () => {
+            if (deleteConfirmText !== 'DELETE') {
+              alert('Please type DELETE to confirm');
+              return;
+            }
+            
+            if (!confirm(`⚠️ WARNING: This will permanently delete ALL ${songs.length} songs in your library. This action CANNOT be undone. Are you absolutely sure?`)) {
+              return;
+            }
+            
+            setSongs([]);
+            setFolders([]);
+            localStorage.setItem('chordTransposerSongs', JSON.stringify([]));
+            localStorage.setItem('chordTransposerFolders', JSON.stringify([]));
+            setCurrentSong(null);
+            setTransposition(0);
+            setShowDeleteModal(false);
+            setDeleteConfirmText('');
+            alert('Entire library deleted successfully');
+          };
+
+          const deleteByArtist = (artistName) => {
+            const artistSongs = songs.filter(s => (s.artist || 'Unknown Artist') === artistName);
+            
+            if (!confirm(`Delete all ${artistSongs.length} songs by "${artistName}"? This cannot be undone.`)) {
+              return;
+            }
+            
+            const updatedSongs = songs.filter(s => (s.artist || 'Unknown Artist') !== artistName);
+            setSongs(updatedSongs);
+            localStorage.setItem('chordTransposerSongs', JSON.stringify(updatedSongs));
+            
+            if (currentSong && (currentSong.artist || 'Unknown Artist') === artistName) {
+              setCurrentSong(null);
+              setTransposition(0);
+            }
+            
+            setShowDeleteModal(false);
+            alert(`Deleted ${artistSongs.length} songs by "${artistName}"`);
+          };
+
+          const deleteByFolder = (folderId, folderName) => {
+            const folderSongs = songs.filter(s => s.folders && s.folders.includes(folderId));
+            
+            if (!confirm(`Delete all ${folderSongs.length} songs in folder "${folderName}"? This cannot be undone.`)) {
+              return;
+            }
+            
+            const updatedSongs = songs.filter(s => !s.folders || !s.folders.includes(folderId));
+            setSongs(updatedSongs);
+            localStorage.setItem('chordTransposerSongs', JSON.stringify(updatedSongs));
+            
+            if (currentSong && currentSong.folders && currentSong.folders.includes(folderId)) {
+              setCurrentSong(null);
+              setTransposition(0);
+            }
+            
+            setShowDeleteModal(false);
+            alert(`Deleted ${folderSongs.length} songs from folder "${folderName}"`);
+          };
+
+
           const loadSong = (song) => {
             setCurrentSong(song);
             setTitle(song.title);
@@ -545,13 +664,23 @@
             setSongKey(song.originalKey);
             setBpm(song.bpm || '');
             setTimeSignature(song.timeSignature || '');
-            setArtist(song.artist || 'Unknown Artist'); // Load artist
+            setArtist(song.artist || 'Unknown Artist');
+            setVideoEmbedUrl(song.videoEmbedUrl || '');
+            setAudioEmbedUrl(song.audioEmbedUrl || '');
+            // Set preference based on what's available
+            if (song.videoEmbedUrl && song.audioEmbedUrl) {
+              setEmbedPreference('video'); // Default to video if both exist
+            } else if (song.videoEmbedUrl) {
+              setEmbedPreference('video');
+            } else if (song.audioEmbedUrl) {
+              setEmbedPreference('audio');
+            }
             setTransposition(0);
             setEditMode(false);
             setShowNewSong(false);
             setViewMode(false);
             setViewDisplayMode('chords');
-            setMobileMenuOpen(false); // Close mobile menu when song is selected
+            setMobileMenuOpen(false);
           };
 
           const startNewSong = () => {
@@ -561,7 +690,10 @@
             setSongKey('');
             setBpm('');
             setTimeSignature('');
-            setArtist(''); // Reset artist
+            setArtist('');
+            setVideoEmbedUrl('');
+            setAudioEmbedUrl('');
+            setEmbedPreference('video');
             setTransposition(0);
             setEditMode(true);
             setShowNewSong(true);
@@ -2352,6 +2484,36 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
+                          <h3 className="font-bold text-lg mb-2">🗑️ Bulk Delete</h3>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Delete Entire Library</strong>: Remove all songs (type DELETE to confirm)</li>
+                            <li><strong>Delete by Artist</strong>: Remove all songs from specific artist</li>
+                            <li><strong>Delete by Folder</strong>: Remove all songs in a custom folder</li>
+                            <li>⚠️ All deletions are permanent - export backups first!</li>
+                            <li>Great for cleaning up after importing new versions</li>
+                          </ul>
+                        </section>
+                        
+                        <section>
+                          <h3 className="font-bold text-lg mb-2">🎥🎵 Video & Audio Embeds</h3>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Add Video</strong> (YouTube): Paste link or iframe code</li>
+                            <li><strong>Add Audio</strong> (Spotify, Apple Music): Paste link or iframe code</li>
+                            <li>Toggle between video and audio during practice</li>
+                            <li>Player stays fixed on right while you scroll the song</li>
+                            <li>Only appears in main view (not in Performance/Live modes)</li>
+                            <li>YouTube works best on GitHub Pages (not local files)</li>
+                            <li>Spotify works perfectly locally (no ads with login)</li>
+                          </ul>
+                          <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                            <strong>How to get embed code:</strong><br/>
+                            • <strong>YouTube</strong>: Share → Copy link (or full iframe code)<br/>
+                            • <strong>Spotify</strong>: Share → Embed track → Copy iframe<br/>
+                            • <strong>Apple Music</strong>: Share → Copy link
+                          </div>
+                        </section>
+                        
+                        <section>
                           <h3 className="font-bold text-lg mb-2">📱 Mobile Tips</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Use landscape mode on tablets for best experience</li>
@@ -2441,6 +2603,36 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
+                          <h3 className="font-bold text-lg mb-2">🗑️ Borrado Masivo</h3>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Borrar Librería Completa</strong>: Elimina todas las canciones (escribe DELETE para confirmar)</li>
+                            <li><strong>Borrar por Artista</strong>: Elimina todas las canciones de un artista específico</li>
+                            <li><strong>Borrar por Carpeta</strong>: Elimina todas las canciones en una carpeta personalizada</li>
+                            <li>⚠️ Todos los borrados son permanentes - ¡exporta respaldos primero!</li>
+                            <li>Ideal para limpiar después de importar nuevas versiones</li>
+                          </ul>
+                        </section>
+                        
+                        <section>
+                          <h3 className="font-bold text-lg mb-2">🎥🎵 Videos y Audio Integrados</h3>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Agregar Video</strong> (YouTube): Pega link o código iframe</li>
+                            <li><strong>Agregar Audio</strong> (Spotify, Apple Music): Pega link o código iframe</li>
+                            <li>Alterna entre video y audio durante la práctica</li>
+                            <li>El reproductor queda fijo a la derecha mientras scrolleas la canción</li>
+                            <li>Solo aparece en vista principal (no en modos Presentación/En Vivo)</li>
+                            <li>YouTube funciona mejor en GitHub Pages (no archivos locales)</li>
+                            <li>Spotify funciona perfectamente localmente (sin ads con login)</li>
+                          </ul>
+                          <div className="mt-2 p-2 bg-gray-100 rounded text-xs">
+                            <strong>Cómo obtener código embed:</strong><br/>
+                            • <strong>YouTube</strong>: Compartir → Copiar enlace (o código iframe completo)<br/>
+                            • <strong>Spotify</strong>: Compartir → Insertar pista → Copiar iframe<br/>
+                            • <strong>Apple Music</strong>: Compartir → Copiar enlace
+                          </div>
+                        </section>
+                        
+                        <section>
                           <h3 className="font-bold text-lg mb-2">📱 Consejos Móvil</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Usa modo horizontal en tablets para mejor experiencia</li>
@@ -2464,7 +2656,7 @@ const copyToClipboard = async () => {
                     
                     <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-800">
-                        <strong>ToneBook v11.3.1</strong> - {helpLanguage === 'en' ? 'Made for worship leaders and musicians' : 'Hecho para líderes de alabanza y músicos'} 🎸
+                        <strong>ToneBook v11.3.4</strong> - {helpLanguage === 'en' ? 'Made for worship leaders and musicians' : 'Hecho para líderes de alabanza y músicos'} 🎸
                       </p>
                     </div>
                     
@@ -2473,6 +2665,127 @@ const copyToClipboard = async () => {
                       className="w-full mt-4 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700">
                       {helpLanguage === 'en' ? 'Got it!' : '¡Entendido!'}
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Delete Modal */}
+              {showDeleteModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+                    <h2 className="text-xl font-bold mb-4 text-red-600">⚠️ Delete Songs</h2>
+                    <p className="text-sm text-gray-600 mb-4">Choose what to delete:</p>
+                    
+                    <div className="space-y-3">
+                      {/* Delete Entire Library */}
+                      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                        <div className="font-bold text-red-700 mb-2">🗑️ Delete Entire Library</div>
+                        <p className="text-xs text-red-600 mb-3">
+                          ⚠️ This will permanently delete ALL {songs.length} songs. This action CANNOT be undone!
+                        </p>
+                        <input
+                          type="text"
+                          placeholder="Type DELETE to confirm"
+                          value={deleteConfirmText}
+                          onChange={(e) => setDeleteConfirmText(e.target.value)}
+                          className="w-full px-3 py-2 border border-red-300 rounded mb-2 text-sm"
+                        />
+                        <button 
+                          onClick={deleteEntireLibrary}
+                          disabled={deleteConfirmText !== 'DELETE'}
+                          className={`w-full px-4 py-2 rounded-lg text-white font-medium ${
+                            deleteConfirmText === 'DELETE' 
+                              ? 'bg-red-700 hover:bg-red-800' 
+                              : 'bg-gray-400 cursor-not-allowed'
+                          }`}
+                        >
+                          Delete Entire Library
+                        </button>
+                      </div>
+                      
+                      <div className="border-t pt-3 mt-3"></div>
+                      
+                      {/* Delete by Artist Header */}
+                      <div className="px-2">
+                        <div className="text-sm font-bold text-gray-700">🎤 Delete by Artist:</div>
+                      </div>
+                      
+                      {/* Artists List */}
+                      <div className="pl-4 space-y-1 max-h-48 overflow-y-auto">
+                        {(() => {
+                          const artistsMap = {};
+                          songs.forEach(song => {
+                            const artist = song.artist || 'Unknown Artist';
+                            if (!artistsMap[artist]) {
+                              artistsMap[artist] = [];
+                            }
+                            artistsMap[artist].push(song);
+                          });
+                          
+                          const artists = Object.keys(artistsMap).sort((a, b) => {
+                            if (a === 'Unknown Artist') return 1;
+                            if (b === 'Unknown Artist') return -1;
+                            return a.localeCompare(b);
+                          });
+                          
+                          return artists.map(artist => {
+                            const artistSongs = artistsMap[artist];
+                            return (
+                              <button 
+                                key={artist}
+                                onClick={() => deleteByArtist(artist)}
+                                className="w-full text-left px-3 py-1.5 hover:bg-red-50 rounded text-sm flex items-center justify-between group border border-transparent hover:border-red-200"
+                              >
+                                <span className="text-gray-700 group-hover:text-red-600">• {artist}</span>
+                                <span className="text-xs text-gray-500">({artistSongs.length})</span>
+                              </button>
+                            );
+                          });
+                        })()}
+                      </div>
+                      
+                      {/* Custom Folders Section */}
+                      {folders.length > 0 && (
+                        <>
+                          <div className="border-t pt-3 mt-3"></div>
+                          
+                          <div className="px-2">
+                            <div className="text-sm font-bold text-gray-700">📁 Delete by Custom Folder:</div>
+                          </div>
+                          
+                          <div className="pl-4 space-y-1 max-h-48 overflow-y-auto">
+                            {folders.map(folder => {
+                              const folderSongs = songs.filter(s => s.folders && s.folders.includes(folder.id));
+                              return (
+                                <button 
+                                  key={folder.id}
+                                  onClick={() => deleteByFolder(folder.id, folder.name)}
+                                  className="w-full text-left px-3 py-1.5 hover:bg-red-50 rounded text-sm flex items-center justify-between group border border-transparent hover:border-red-200"
+                                >
+                                  <span className="text-gray-700 group-hover:text-red-600">• {folder.name}</span>
+                                  <span className="text-xs text-gray-500">({folderSongs.length})</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      )}
+                      
+                      <button 
+                        onClick={() => {
+                          setShowDeleteModal(false);
+                          setDeleteConfirmText('');
+                        }}
+                        className="w-full bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 mt-4">
+                        Cancel
+                      </button>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                      <p className="text-xs text-yellow-800">
+                        ⚠️ <strong>Warning:</strong> Deleted songs cannot be recovered. Make sure to export backups regularly!
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -3085,31 +3398,6 @@ const copyToClipboard = async () => {
                           )}
                         </div>
                         
-                        {/* Import/Export Section */}
-                        <div className="border-b border-gray-200">
-                          <button 
-                            onClick={() => setExpandedMenuSections({...expandedMenuSections, importExport: !expandedMenuSections.importExport})}
-                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Download size={18} className="text-green-600" />
-                              <span className="font-medium text-sm">Import/Export</span>
-                            </div>
-                            {expandedMenuSections.importExport ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                          </button>
-                          {expandedMenuSections.importExport && (
-                            <div className="px-4 pb-3 space-y-2">
-                              <button onClick={exportAllSongs} className="w-full flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
-                                <Download size={16} />Export
-                              </button>
-                              <label className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 cursor-pointer text-sm">
-                                <input type="file" accept=".tone" onChange={importAllSongs} className="hidden" />
-                                <Upload size={16} />Import Songs
-                              </label>
-                            </div>
-                          )}
-                        </div>
-                        
                         {/* Songs Section - 3 Level Structure */}
                         <div className="border-b border-gray-200">
                           <button 
@@ -3422,6 +3710,52 @@ const copyToClipboard = async () => {
                           )}
                         </div>
                         
+                        {/* Import/Export Section */}
+                        <div className="border-b border-gray-200">
+                          <button 
+                            onClick={() => setExpandedMenuSections({...expandedMenuSections, importExport: !expandedMenuSections.importExport})}
+                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Download size={18} className="text-green-600" />
+                              <span className="font-medium text-sm">Import/Export</span>
+                            </div>
+                            {expandedMenuSections.importExport ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </button>
+                          {expandedMenuSections.importExport && (
+                            <div className="px-4 pb-3 space-y-2">
+                              <button onClick={exportAllSongs} className="w-full flex items-center justify-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm">
+                                <Download size={16} />Export
+                              </button>
+                              <label className="w-full flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 cursor-pointer text-sm">
+                                <input type="file" accept=".tone" onChange={importAllSongs} className="hidden" />
+                                <Upload size={16} />Import Songs
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Delete Section */}
+                        <div className="border-b border-gray-200">
+                          <button 
+                            onClick={() => setExpandedMenuSections({...expandedMenuSections, deleteSongs: !expandedMenuSections.deleteSongs})}
+                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Trash2 size={18} className="text-red-600" />
+                              <span className="font-medium text-sm">Delete</span>
+                            </div>
+                            {expandedMenuSections.deleteSongs ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                          </button>
+                          {expandedMenuSections.deleteSongs && (
+                            <div className="px-4 pb-3">
+                              <button onClick={() => setShowDeleteModal(true)} className="w-full flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm">
+                                <Trash2 size={16} />Delete Songs
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        
                         {/* Search Results / Pinned Songs List */}
                         <div className="p-4">
                           {(() => {
@@ -3563,9 +3897,6 @@ const copyToClipboard = async () => {
                         <button onClick={startNewSong} className="p-3 hover:bg-gray-100 rounded-lg" title="New Song">
                           <Plus size={24} className="text-blue-600" />
                         </button>
-                        <button onClick={exportAllSongs} className="p-3 hover:bg-gray-100 rounded-lg" title="Export">
-                          <Download size={24} className="text-green-600" />
-                        </button>
                         <button 
                           onClick={() => {
                             setMenuCollapsed(false); // Expand menu
@@ -3576,6 +3907,12 @@ const copyToClipboard = async () => {
                           title="All Songs"
                         >
                           <Music size={24} className="text-blue-600" />
+                        </button>
+                        <button onClick={exportAllSongs} className="p-3 hover:bg-gray-100 rounded-lg" title="Export">
+                          <Download size={24} className="text-green-600" />
+                        </button>
+                        <button onClick={() => setShowDeleteModal(true)} className="p-3 hover:bg-gray-100 rounded-lg" title="Delete">
+                          <Trash2 size={24} className="text-red-600" />
                         </button>
                         <button onClick={() => setShowHelpModal(true)} className="p-3 hover:bg-gray-100 rounded-lg" title="Help & Info">
                           <Info size={24} className="text-purple-600" />
@@ -3636,6 +3973,31 @@ const copyToClipboard = async () => {
                             <label className="block text-sm font-medium text-gray-700 mb-2">Time Signature (optional)</label>
                             <input type="text" value={timeSignature} onChange={(e) => setTimeSignature(e.target.value)}
                               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., 4/4, 3/4, 6/8" />
+                          </div>
+                          
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">🎥 Video Embed (YouTube, etc.) - Optional</label>
+                            <input type="text" value={videoEmbedUrl} onChange={(e) => setVideoEmbedUrl(e.target.value)}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              placeholder="Paste YouTube link or iframe code (e.g., https://youtu.be/...)" />
+                            <p className="text-xs text-gray-500 mt-1">💡 For visual reference while practicing</p>
+                          </div>
+                          
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">🎵 Audio Embed (Spotify, Apple Music, etc.) - Optional</label>
+                            <input type="text" value={audioEmbedUrl} onChange={(e) => setAudioEmbedUrl(e.target.value)}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              placeholder="Paste Spotify link or iframe code (e.g., https://open.spotify.com/track/...)" />
+                            <p className="text-xs text-gray-500 mt-1">💡 For audio-only practice (no ads on Spotify with login)</p>
+                          </div>
+                          
+                          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <p className="text-xs text-blue-800 mb-2">
+                              <strong>💡 Tip:</strong> Add both video and audio! You can toggle between them while practicing. Video shows the performance, audio is great for focused practice without distractions.
+                            </p>
+                            <p className="text-xs text-yellow-700 bg-yellow-50 p-2 rounded border border-yellow-200">
+                              <strong>📌 Note:</strong> YouTube videos work best when ToneBook is deployed on GitHub Pages or a web server. When running locally (file://), some videos may be restricted. Use the "Open in YouTube" link as fallback.
+                            </p>
                           </div>
                           
                           <div className="mb-4">
@@ -3725,8 +4087,9 @@ const copyToClipboard = async () => {
                           </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto p-8 bg-white">
-                          <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap">
+                        <div className={`flex-1 overflow-y-auto p-8 bg-white ${(currentSong.videoEmbedUrl || currentSong.audioEmbedUrl) ? 'flex gap-6' : ''}`}>
+                          {/* Song content */}
+                          <div className={`font-mono whitespace-pre-wrap ${(currentSong.videoEmbedUrl || currentSong.audioEmbedUrl) ? 'flex-1' : 'max-w-4xl mx-auto'}`}>
                             {formatContent(filterMeasureLines(currentSong.content), transposition).map((line, i) => (
                               <div key={i} className={line.isComment ? "leading-relaxed text-gray-500 text-sm italic" : "leading-relaxed"}>
                                 {line.isEmpty ? (<br />) : (
@@ -3743,6 +4106,101 @@ const copyToClipboard = async () => {
                               </div>
                             ))}
                           </div>
+                          
+                          {/* Embed player - fixed on right side */}
+                          {(currentSong.videoEmbedUrl || currentSong.audioEmbedUrl) && (
+                            <div className="w-96 shrink-0 sticky top-8 self-start">
+                              <div className="bg-gray-100 rounded-lg p-4 shadow-lg">
+                                {/* Toggle buttons - only show if both embeds exist */}
+                                {currentSong.videoEmbedUrl && currentSong.audioEmbedUrl && (
+                                  <div className="flex gap-2 mb-3">
+                                    <button
+                                      onClick={() => setEmbedPreference('video')}
+                                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        embedPreference === 'video'
+                                          ? 'bg-blue-600 text-white'
+                                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                                      }`}
+                                    >
+                                      <span>🎥</span>
+                                      <span>Video</span>
+                                    </button>
+                                    <button
+                                      onClick={() => setEmbedPreference('audio')}
+                                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                        embedPreference === 'audio'
+                                          ? 'bg-blue-600 text-white'
+                                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                                      }`}
+                                    >
+                                      <span>🎵</span>
+                                      <span>Audio</span>
+                                    </button>
+                                  </div>
+                                )}
+                                
+                                {/* Header */}
+                                <div className="text-sm font-medium text-gray-700 mb-2">
+                                  {(() => {
+                                    // Determine which embed to show
+                                    const showVideo = (embedPreference === 'video' && currentSong.videoEmbedUrl) || 
+                                                     (!currentSong.audioEmbedUrl && currentSong.videoEmbedUrl);
+                                    return showVideo ? '🎥 Video Track' : '🎵 Audio Track';
+                                  })()}
+                                </div>
+                                
+                                {/* Embed iframe */}
+                                <div className="aspect-video bg-black rounded overflow-hidden relative">
+                                  <iframe
+                                    src={(() => {
+                                      // Determine which embed URL to use
+                                      const showVideo = (embedPreference === 'video' && currentSong.videoEmbedUrl) || 
+                                                       (!currentSong.audioEmbedUrl && currentSong.videoEmbedUrl);
+                                      return showVideo ? currentSong.videoEmbedUrl : currentSong.audioEmbedUrl;
+                                    })()}
+                                    width="100%"
+                                    height="100%"
+                                    frameBorder="0"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                    className="w-full h-full"
+                                  />
+                                </div>
+                                
+                                {/* YouTube fallback link */}
+                                {(() => {
+                                  const showVideo = (embedPreference === 'video' && currentSong.videoEmbedUrl) || 
+                                                   (!currentSong.audioEmbedUrl && currentSong.videoEmbedUrl);
+                                  const currentEmbedUrl = showVideo ? currentSong.videoEmbedUrl : currentSong.audioEmbedUrl;
+                                  
+                                  // If it's YouTube, show fallback link
+                                  if (currentEmbedUrl && (currentEmbedUrl.includes('youtube.com/embed/') || currentEmbedUrl.includes('youtube-nocookie.com/embed/'))) {
+                                    const videoId = currentEmbedUrl.split('/embed/')[1]?.split('?')[0];
+                                    const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+                                    
+                                    return (
+                                      <a 
+                                        href={watchUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block mt-2 text-center text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                                      >
+                                        📺 Can't see the video? Open in YouTube
+                                      </a>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                                
+                                {/* Help text */}
+                                <p className="text-xs text-gray-500 mt-2">
+                                  {currentSong.videoEmbedUrl && currentSong.audioEmbedUrl 
+                                    ? '💡 Toggle between video and audio • Scroll song while player stays fixed'
+                                    : '💡 Scroll the song while player stays fixed'}
+                                </p>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
