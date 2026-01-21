@@ -1,8 +1,12 @@
-# 🎸 ToneBook v11.3.2
+# 🎸 ToneBook v11.3.4
 
 **The Complete Worship Leader & Musician App**
 
 ToneBook is a powerful web-based application designed for worship leaders and musicians to organize songs, transpose chords, and enhance live performance experiences.
+
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen)](https://yourusername.github.io/ToneBook/)
+[![Version](https://img.shields.io/badge/version-11.3.4-blue)](https://github.com/yourusername/ToneBook)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 [🇺🇸 English](#english) | [🇪🇸 Español](#español)
 
@@ -10,379 +14,484 @@ ToneBook is a powerful web-based application designed for worship leaders and mu
 
 ## English
 
-### 🚀 Quick Start
+### 🚀 Quick Start (5 Minutes!)
 
-1. **GitHub Pages Deployment** (Recommended)
-   - Fork this repository or upload files to your GitHub repo
-   - Go to Settings → Pages
-   - Source: Deploy from branch `main` / `root`
-   - Your app will be live at: `https://yourusername.github.io/ToneBook/`
+1. **Fork or Download** this repository
+2. **Upload to GitHub**:
+   - Create new repo named `ToneBook`
+   - Upload `index.html`
+3. **Enable GitHub Pages**:
+   - Settings → Pages
+   - Source: `main` branch, `/ (root)` folder
+   - Save
+4. **Done!** Visit: `https://yourusername.github.io/ToneBook/`
 
-2. **Local Use**
-   - Simply open `index.html` in any modern web browser
-   - All data stored locally in your browser
+### ✨ What's New in v11.3.4
 
-### ✨ Key Features
+#### 🗑️ **Bulk Delete System**
+- Delete entire library with confirmation
+- Delete all songs by specific artist
+- Delete all songs in custom folder
+- Perfect for cleaning up imports
 
-#### 🎵 Song Management
-- Create and edit songs with chords, lyrics, and metadata
-- Automatic chord detection and transposition
-- Support for sections: `[Intro]`, `[Verse]`, `[Chorus]`, etc.
-- Comments with `--` for performance notes (dynamics, cues, etc.)
-- Nashville Number System support
+#### 🎥🎵 **Dual Video/Audio Embeds**
+- Add YouTube videos for visual reference
+- Add Spotify/Apple Music for audio practice
+- Toggle between video and audio
+- Fixed player stays visible while scrolling
+- Only in practice view (not Performance/Live modes)
 
-#### 🎤 Organization by Artist
-- Songs automatically grouped by artist
-- Dynamic artist folders (no manual setup needed)
-- Alphabetically sorted songs within each artist
+#### 📋 **Menu Reorganization**
+- Intuitive icon menu (collapsed)
+- Logical section order (expanded)
+- Consistent navigation experience
 
-#### 📁 Custom Folders
-- Create custom folders for setlists (e.g., "Sunday Service", "Christmas")
-- Drag & drop songs to folders (desktop)
-- Pin songs to create ordered setlists
+#### 📖 **Bilingual Help System**
+- Complete guide in English and Spanish
+- Toggle language on the fly
+- Includes all new features
 
-#### 🔍 Powerful Search
-- Search across ALL songs by title, artist, or key
-- Instant results regardless of selected folder
-- Quick access to pin or move songs from search results
+### 🎵 Core Features
 
-#### 🎭 Performance Mode
-- Clean, distraction-free view for live performance
-- Real-time chord transposition
-- Switch between: Chords, Lyrics Only, Numbers (Nashville)
-- Adjustable font size (50%-200%)
-- Built-in metronome with visual indicator
-- Navigate between songs with Prev/Next buttons
+#### Song Management
+- ✅ Create and edit songs with chords, lyrics, metadata
+- ✅ Automatic chord detection and transposition
+- ✅ Sections: `[Intro]`, `[Verse]`, `[Chorus]`, `[Bridge]`
+- ✅ Comments with `--` for performance notes
+- ✅ Nashville Number System support
 
-#### 🎬 Live Mode
-- Automatic section advancement based on BPM and measures
-- Visual progress bar for each section
-- Transport controls (play/pause/next/previous)
-- Perfect for rehearsals and performances
+#### Organization
+- ✅ **Artist-Based**: Automatic grouping by artist
+- ✅ **Custom Folders**: Create setlists and collections
+- ✅ **Global Search**: Find any song by title, artist, or key
+- ✅ **Pin Songs**: Create ordered setlists
+- ✅ **Drag & Drop**: Organize easily (desktop)
 
-#### 📤 Export/Import
-- **Export All Songs** - Complete library backup
-- **Export by Artist** - Share specific artist songs
-- **Export by Custom Folder** - Share setlists with your band
-- Import with automatic folder creation
-- Smart duplicate handling (keep, replace, or skip)
+#### Performance Mode
+- ✅ Clean, distraction-free view for live performance
+- ✅ Real-time chord transposition
+- ✅ Multiple views: Chords, Lyrics Only, Numbers
+- ✅ Adjustable font size (50%-200%)
+- ✅ Built-in metronome with visual indicator
+- ✅ Navigate between songs with Prev/Next buttons
 
-#### 🌍 Bilingual Support
-- Complete interface available in English and Spanish
-- Toggle language in Help/Info modal
-- Documentation in both languages
+#### Live Mode
+- ✅ Automatic section advancement based on BPM
+- ✅ Visual progress bar for each section
+- ✅ Transport controls (play/pause/next/previous)
+- ✅ Perfect for rehearsals and performances
 
-#### 📱 Mobile Responsive
-- Optimized for tablets and phones
-- Touch-friendly controls
-- Landscape mode recommended for tablets
+#### Practice Enhancement
+- ✅ **Video Embed**: YouTube videos for visual reference
+- ✅ **Audio Embed**: Spotify/Apple Music for practice
+- ✅ **Dual Mode**: Toggle between video and audio
+- ✅ **Fixed Player**: Stays visible while scrolling song
+- ✅ **Smart Detection**: Auto-converts URLs and iframe codes
 
-### 📖 Usage Guide
+#### Import/Export
+- ✅ Export entire library or by artist/folder
+- ✅ Smart import with duplicate detection
+- ✅ Automatic folder creation
+- ✅ Share setlists with your band (.tone files)
+
+#### Bulk Delete
+- ✅ Delete entire library (with safety confirmation)
+- ✅ Delete all songs by artist
+- ✅ Delete all songs in folder
+- ✅ Perfect for cleaning up old imports
+
+### 📖 Quick Guide
 
 #### Creating Songs
+
 ```
 Title: Amazing Grace
 Artist: John Newton
 Key: C
 BPM: 80
 Time Signature: 3/4
+Video Embed: https://youtu.be/VIDEO_ID
+Audio Embed: https://open.spotify.com/track/TRACK_ID
+
+[Intro]
+//4 measures
 
 [Verse 1]
 [C]Amazing [G]grace
--- Piano here, keyboard only
+-- Piano only, soft and gentle
 [Am]How [F]sweet the sound
--- Crescendo for chorus
+-- Build dynamics gradually
 
 [Chorus]
 //8 measures
 [C]That saved a [G]wretch like [Am]me
 ```
 
-**Chord Format**: `[C]`, `[Am]`, `[G7]`, `[Csus4]`  
-**Sections**: `[Intro]`, `[Verse 1]`, `[Chorus]`, `[Bridge]`, `[Outro]`  
-**Comments**: `-- Your note here` (appears in gray, smaller text)  
-**Measures**: `//8 measures` (for Live Mode timing)
+**Syntax:**
+- Chords: `[C]`, `[Am]`, `[G7]`, `[Csus4]`
+- Sections: `[Intro]`, `[Verse 1]`, `[Chorus]`, `[Bridge]`
+- Comments: `-- Your performance note here`
+- Measures: `//8 measures` (for Live Mode timing)
+- Embeds: Paste YouTube or Spotify links/iframes
 
-#### Organizing Your Library
+#### Adding Video/Audio
 
-1. **By Artist** - Automatic grouping
-   - Add artist name when creating/editing songs
-   - Artist folders appear automatically
-   - Click artist name to view all songs
+**YouTube:**
+1. Go to video on YouTube
+2. Click Share → Copy link
+3. Paste in "Video Embed" field
+4. Can also paste full iframe code
 
-2. **Custom Folders** - Manual organization
-   - Create folders for specific services or themes
-   - Drag songs to folders (desktop)
-   - Click 📁 icon to add songs (mobile/desktop)
+**Spotify:**
+1. Go to track on Spotify
+2. Click Share → Embed track → Copy code
+3. Paste in "Audio Embed" field
+4. Can also paste just the track URL
 
-3. **Pinned Songs** - Create Setlists
-   - Click 📍 to pin songs
-   - Pinned songs appear in order at bottom of sidebar
-   - Drag to reorder (desktop) or use ↑↓ buttons (mobile)
+**Apple Music:**
+1. Share → Copy link
+2. Paste in "Audio Embed" field
 
-#### Search
-Type in the search box to find songs by:
-- Song title (e.g., "Amazing Grace")
-- Artist name (e.g., "Hillsong")
-- Key (e.g., "C", "Am")
-
-Results show ALL matching songs across your entire library.
-
-#### Performance Tips
-1. Pin songs in order to create your setlist
-2. Use Performance Mode for clean, large-text view
-3. Enable metronome for timing during practice
-4. Add `-- comments` for dynamics and cues
-5. Export setlists before important services as backup
+#### Using Embeds
+- Add one or both (video + audio)
+- If both exist, toggle buttons appear
+- Player fixed on right side
+- Only in main view (not Performance/Live)
+- YouTube works best on GitHub Pages
+- Spotify works great locally (no ads with login)
 
 ### 🛠️ Technical Details
 
 - **Framework**: React (via Babel standalone)
 - **Styling**: Tailwind CSS (via CDN)
 - **Storage**: Browser LocalStorage (client-side only)
-- **File Format**: Single HTML file (no build process needed)
-- **Export Format**: `.tone` files (JSON format)
+- **File Format**: Single HTML file (no build process)
+- **Export Format**: `.tone` files (JSON)
+- **Size**: ~250 KB
+- **Requirements**: Modern web browser
 
 ### 📦 What's Included
 
 ```
-tonebook-v11.3.2-complete/
-├── index.html              - Main application (REQUIRED)
-├── README.md               - This file
-├── CHANGELOG.md            - Version history
-├── DEPLOYMENT.md           - GitHub Pages setup guide
-├── USER-GUIDE-EN.pdf       - User guide in English
-├── USER-GUIDE-ES.pdf       - Guía de usuario en español
-└── .gitignore              - Git configuration
+ToneBook-v11.3.4/
+├── index.html              ⭐ Main application (REQUIRED)
+├── README.md               📄 This file
+├── CHANGELOG.md            📝 Version history
+├── DEPLOYMENT.md           🚀 Deployment guide
+├── LICENSE                 📄 MIT License
+└── .gitignore              🔧 Git configuration
 ```
 
-### 🔄 Version History
-
-- **v11.3.2** - Export fixes, compact menu, search improvements
-- **v11.3** - Bilingual help, comments with --, UX improvements
-- **v11.2** - 3-level menu structure (All Songs/Artists/Custom Folders)
-- **v11.0** - Artist-based organization system
-- **v10.8** - Mobile responsiveness fixes
-- **v10.4** - Metronome and Live Mode
-
-See [CHANGELOG.md](CHANGELOG.md) for complete history.
-
-### 💾 Backup & Data
+### 💾 Data & Backup
 
 **Important**: Your data is stored locally in your browser's LocalStorage.
 
-**To backup:**
+**To Backup:**
 1. Click Export → Export All Songs
-2. Save the `.tone` file somewhere safe
-3. Do this regularly, especially before browser updates
+2. Save the `.tone` file
+3. Do this regularly!
 
-**To restore:**
+**To Restore:**
 1. Click Import Songs
-2. Select your `.tone` backup file
-3. Choose merge or replace option
+2. Select your `.tone` backup
+3. Choose merge or replace
+
+### 🌟 Use Cases
+
+**Worship Leaders:**
+- Organize Sunday setlists
+- Transpose for different vocalists
+- Share songs with band members
+- Practice with original tracks
+
+**Musicians:**
+- Learn new songs with video/audio
+- Transpose to your instrument key
+- Add performance notes
+- Track your song library
+
+**Worship Teams:**
+- Share setlists easily
+- Everyone has same chord charts
+- Add practice tracks
+- Collaborate on arrangements
+
+### 🔒 Privacy & Security
+
+- ✅ All data stored locally in your browser
+- ✅ No server, no tracking, no analytics
+- ✅ Export/import for backup
+- ✅ Works completely offline
+- ✅ Your songs stay private
+
+### 📱 Mobile Support
+
+- ✅ Fully responsive design
+- ✅ Touch-friendly controls
+- ✅ Works on tablets and phones
+- ✅ Landscape mode recommended for tablets
+- ✅ Add to home screen for app-like experience
+
+### 🆘 Support
+
+- 📖 **Help Modal**: Click ℹ️ icon (bilingual guide)
+- 🐛 **Issues**: Open a GitHub issue
+- 💬 **Questions**: GitHub Discussions
+- 📧 **Contact**: [Your contact info]
 
 ### 🤝 Contributing
 
-Found a bug or have a suggestion? Feel free to:
-- Open an issue on GitHub
-- Submit a pull request
-- Contact the developer
+Contributions welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ### 📄 License
 
-This project is open source and available for personal and ministry use.
+MIT License - Free for personal and ministry use.
 
 ---
 
 ## Español
 
-### 🚀 Inicio Rápido
+### 🚀 Inicio Rápido (¡5 Minutos!)
 
-1. **Despliegue en GitHub Pages** (Recomendado)
-   - Haz fork de este repositorio o sube los archivos a tu repo de GitHub
-   - Ve a Settings → Pages
-   - Source: Deploy from branch `main` / `root`
-   - Tu app estará en: `https://tuusuario.github.io/ToneBook/`
+1. **Fork o Descarga** este repositorio
+2. **Sube a GitHub**:
+   - Crea nuevo repo llamado `ToneBook`
+   - Sube `index.html`
+3. **Habilita GitHub Pages**:
+   - Settings → Pages
+   - Source: branch `main`, carpeta `/ (root)`
+   - Guardar
+4. **¡Listo!** Visita: `https://tuusuario.github.io/ToneBook/`
 
-2. **Uso Local**
-   - Simplemente abre `index.html` en cualquier navegador moderno
-   - Todos los datos se guardan localmente en tu navegador
+### ✨ Novedades en v11.3.4
 
-### ✨ Características Principales
+#### 🗑️ **Sistema de Borrado Masivo**
+- Borrar librería completa con confirmación
+- Borrar todas las canciones de un artista
+- Borrar todas las canciones de carpeta personalizada
+- Perfecto para limpiar imports
 
-#### 🎵 Gestión de Canciones
-- Crea y edita canciones con acordes, letras y metadata
-- Detección y transposición automática de acordes
-- Soporte para secciones: `[Intro]`, `[Verso]`, `[Coro]`, etc.
-- Comentarios con `--` para notas de presentación (dinámicas, cues, etc.)
-- Sistema de Números Nashville
+#### 🎥🎵 **Embeds Duales Video/Audio**
+- Agrega videos de YouTube para referencia visual
+- Agrega Spotify/Apple Music para práctica de audio
+- Alterna entre video y audio
+- Reproductor fijo visible mientras scrolleas
+- Solo en vista de práctica (no en modos Presentación/En Vivo)
 
-#### 🎤 Organización por Artista
-- Canciones agrupadas automáticamente por artista
-- Folders dinámicos de artistas (sin configuración manual)
-- Canciones ordenadas alfabéticamente dentro de cada artista
+#### 📋 **Reorganización del Menú**
+- Menú de iconos intuitivo (colapsado)
+- Orden lógico de secciones (expandido)
+- Experiencia de navegación consistente
 
-#### 📁 Carpetas Personalizadas
-- Crea carpetas personalizadas para setlists (ej: "Domingo 21", "Navidad")
-- Arrastra canciones a carpetas (escritorio)
-- Fija canciones para crear setlists ordenados
+#### 📖 **Sistema de Ayuda Bilingüe**
+- Guía completa en inglés y español
+- Cambia idioma al vuelo
+- Incluye todas las nuevas características
 
-#### 🔍 Búsqueda Potente
-- Busca en TODAS las canciones por título, artista o tono
-- Resultados instantáneos sin importar la carpeta seleccionada
-- Acceso rápido para fijar o mover canciones desde resultados
+### 🎵 Características Principales
 
-#### 🎭 Modo Presentación
-- Vista limpia sin distracciones para presentación en vivo
-- Transposición de acordes en tiempo real
-- Cambia entre: Acordes, Solo Letras, Números (Nashville)
-- Tamaño de fuente ajustable (50%-200%)
-- Metrónomo integrado con indicador visual
-- Navega entre canciones con botones Anterior/Siguiente
+#### Gestión de Canciones
+- ✅ Crear y editar canciones con acordes, letras, metadata
+- ✅ Detección y transposición automática de acordes
+- ✅ Secciones: `[Intro]`, `[Verso]`, `[Coro]`, `[Puente]`
+- ✅ Comentarios con `--` para notas de presentación
+- ✅ Soporte para Sistema de Números Nashville
 
-#### 🎬 Modo En Vivo
-- Avance automático de secciones basado en BPM y compases
-- Barra de progreso visual para cada sección
-- Controles de reproducción (play/pausa/siguiente/anterior)
-- Perfecto para ensayos y presentaciones
+#### Organización
+- ✅ **Por Artista**: Agrupación automática por artista
+- ✅ **Carpetas Personalizadas**: Crea setlists y colecciones
+- ✅ **Búsqueda Global**: Encuentra canciones por título, artista o tono
+- ✅ **Fijar Canciones**: Crea setlists ordenados
+- ✅ **Arrastrar y Soltar**: Organiza fácilmente (escritorio)
 
-#### 📤 Exportar/Importar
-- **Exportar Todas** - Respaldo completo de tu librería
-- **Exportar por Artista** - Comparte canciones de artista específico
-- **Exportar por Carpeta** - Comparte setlists con tu banda
-- Importa con creación automática de carpetas
-- Manejo inteligente de duplicados (mantener, reemplazar o saltar)
+#### Modo Presentación
+- ✅ Vista limpia sin distracciones para presentación en vivo
+- ✅ Transposición de acordes en tiempo real
+- ✅ Múltiples vistas: Acordes, Solo Letras, Números
+- ✅ Tamaño de fuente ajustable (50%-200%)
+- ✅ Metrónomo integrado con indicador visual
+- ✅ Navega entre canciones con botones Anterior/Siguiente
 
-#### 🌍 Soporte Bilingüe
-- Interfaz completa disponible en inglés y español
-- Cambia idioma en el modal de Ayuda/Info
-- Documentación en ambos idiomas
+#### Modo En Vivo
+- ✅ Avance automático de secciones basado en BPM
+- ✅ Barra de progreso visual para cada sección
+- ✅ Controles de reproducción (play/pausa/siguiente/anterior)
+- ✅ Perfecto para ensayos y presentaciones
 
-#### 📱 Responsive Móvil
-- Optimizado para tablets y teléfonos
-- Controles táctiles amigables
-- Modo horizontal recomendado para tablets
+#### Mejora de Práctica
+- ✅ **Video Embed**: Videos de YouTube para referencia visual
+- ✅ **Audio Embed**: Spotify/Apple Music para práctica
+- ✅ **Modo Dual**: Alterna entre video y audio
+- ✅ **Reproductor Fijo**: Se mantiene visible mientras scrolleas
+- ✅ **Detección Inteligente**: Auto-convierte URLs y códigos iframe
 
-### 📖 Guía de Uso
+#### Importar/Exportar
+- ✅ Exporta librería completa o por artista/carpeta
+- ✅ Importación inteligente con detección de duplicados
+- ✅ Creación automática de carpetas
+- ✅ Comparte setlists con tu banda (archivos .tone)
+
+#### Borrado Masivo
+- ✅ Borrar librería completa (con confirmación de seguridad)
+- ✅ Borrar todas las canciones de un artista
+- ✅ Borrar todas las canciones de una carpeta
+- ✅ Perfecto para limpiar imports antiguos
+
+### 📖 Guía Rápida
 
 #### Crear Canciones
+
 ```
 Título: Sublime Gracia
 Artista: John Newton
 Tono: C
 BPM: 80
 Time Signature: 3/4
+Video Embed: https://youtu.be/VIDEO_ID
+Audio Embed: https://open.spotify.com/track/TRACK_ID
+
+[Intro]
+//4 measures
 
 [Verso 1]
 [C]Sublime [G]gracia
--- Piano aquí, solo teclado
+-- Solo piano, suave y gentil
 [Am]Del Se[F]ñor
--- Crescendo para el coro
+-- Construye dinámicas gradualmente
 
 [Coro]
 //8 measures
 [C]Que a un in[G]feliz sal[Am]vó
 ```
 
-**Formato de Acordes**: `[C]`, `[Am]`, `[G7]`, `[Csus4]`  
-**Secciones**: `[Intro]`, `[Verso 1]`, `[Coro]`, `[Puente]`, `[Outro]`  
-**Comentarios**: `-- Tu nota aquí` (aparece en gris, texto más pequeño)  
-**Compases**: `//8 measures` (para timing en Modo En Vivo)
+**Sintaxis:**
+- Acordes: `[C]`, `[Am]`, `[G7]`, `[Csus4]`
+- Secciones: `[Intro]`, `[Verso 1]`, `[Coro]`, `[Puente]`
+- Comentarios: `-- Tu nota de presentación aquí`
+- Compases: `//8 measures` (para timing en Modo En Vivo)
+- Embeds: Pega links o iframes de YouTube o Spotify
 
-#### Organiza Tu Librería
+#### Agregar Video/Audio
 
-1. **Por Artista** - Agrupación automática
-   - Agrega nombre de artista al crear/editar canciones
-   - Folders de artistas aparecen automáticamente
-   - Click en nombre de artista para ver todas sus canciones
+**YouTube:**
+1. Ve al video en YouTube
+2. Click Compartir → Copiar enlace
+3. Pega en campo "Video Embed"
+4. También puedes pegar código iframe completo
 
-2. **Carpetas Personalizadas** - Organización manual
-   - Crea carpetas para servicios específicos o temas
-   - Arrastra canciones a carpetas (escritorio)
-   - Click en icono 📁 para agregar canciones (móvil/escritorio)
+**Spotify:**
+1. Ve a la pista en Spotify
+2. Click Compartir → Insertar pista → Copiar código
+3. Pega en campo "Audio Embed"
+4. También puedes pegar solo la URL de la pista
 
-3. **Canciones Fijadas** - Crear Setlists
-   - Click en 📍 para fijar canciones
-   - Canciones fijadas aparecen en orden al final del sidebar
-   - Arrastra para reordenar (escritorio) o usa botones ↑↓ (móvil)
+**Apple Music:**
+1. Compartir → Copiar enlace
+2. Pega en campo "Audio Embed"
 
-#### Búsqueda
-Escribe en el cuadro de búsqueda para encontrar canciones por:
-- Título de canción (ej: "Sublime Gracia")
-- Nombre de artista (ej: "Hillsong")
-- Tono (ej: "C", "Am")
-
-Los resultados muestran TODAS las canciones coincidentes en toda tu librería.
-
-#### Consejos de Presentación
-1. Fija canciones en orden para crear tu setlist
-2. Usa Modo Presentación para vista limpia con texto grande
-3. Habilita metrónomo para timing durante práctica
-4. Agrega comentarios `--` para dinámicas y cues
-5. Exporta setlists antes de servicios importantes como respaldo
+#### Usar Embeds
+- Agrega uno o ambos (video + audio)
+- Si existen ambos, aparecen botones de alternancia
+- Reproductor fijo en lado derecho
+- Solo en vista principal (no Presentación/En Vivo)
+- YouTube funciona mejor en GitHub Pages
+- Spotify funciona excelente localmente (sin ads con login)
 
 ### 🛠️ Detalles Técnicos
 
 - **Framework**: React (vía Babel standalone)
 - **Estilos**: Tailwind CSS (vía CDN)
 - **Almacenamiento**: LocalStorage del navegador (solo cliente)
-- **Formato de Archivo**: Archivo HTML único (no requiere proceso de build)
-- **Formato de Exportación**: Archivos `.tone` (formato JSON)
+- **Formato de Archivo**: Archivo HTML único (sin proceso de build)
+- **Formato de Exportación**: Archivos `.tone` (JSON)
+- **Tamaño**: ~250 KB
+- **Requisitos**: Navegador web moderno
 
-### 📦 Qué Incluye
-
-```
-tonebook-v11.3.2-complete/
-├── index.html              - Aplicación principal (REQUERIDO)
-├── README.md               - Este archivo
-├── CHANGELOG.md            - Historial de versiones
-├── DEPLOYMENT.md           - Guía de configuración GitHub Pages
-├── USER-GUIDE-EN.pdf       - Guía de usuario en inglés
-├── USER-GUIDE-ES.pdf       - Guía de usuario en español
-└── .gitignore              - Configuración Git
-```
-
-### 🔄 Historial de Versiones
-
-- **v11.3.2** - Correcciones de export, menú compacto, mejoras de búsqueda
-- **v11.3** - Ayuda bilingüe, comentarios con --, mejoras UX
-- **v11.2** - Estructura de menú de 3 niveles (Todas/Artistas/Carpetas)
-- **v11.0** - Sistema de organización por artista
-- **v10.8** - Correcciones responsive móvil
-- **v10.4** - Metrónomo y Modo En Vivo
-
-Ver [CHANGELOG.md](CHANGELOG.md) para historial completo.
-
-### 💾 Respaldo & Datos
+### 💾 Datos y Respaldo
 
 **Importante**: Tus datos se guardan localmente en el LocalStorage de tu navegador.
 
-**Para respaldar:**
-1. Click en Exportar → Exportar Todas
-2. Guarda el archivo `.tone` en lugar seguro
-3. Hazlo regularmente, especialmente antes de actualizaciones del navegador
+**Para Respaldar:**
+1. Click Exportar → Exportar Todas
+2. Guarda el archivo `.tone`
+3. ¡Hazlo regularmente!
 
-**Para restaurar:**
-1. Click en Importar Canciones
-2. Selecciona tu archivo de respaldo `.tone`
-3. Elige opción de combinar o reemplazar
+**Para Restaurar:**
+1. Click Importar Canciones
+2. Selecciona tu respaldo `.tone`
+3. Elige combinar o reemplazar
 
-### 🤝 Contribuir
+### 🌟 Casos de Uso
 
-¿Encontraste un bug o tienes una sugerencia? Siéntete libre de:
-- Abrir un issue en GitHub
-- Enviar un pull request
-- Contactar al desarrollador
+**Líderes de Alabanza:**
+- Organizar setlists de domingo
+- Transponer para diferentes vocalistas
+- Compartir canciones con miembros de banda
+- Practicar con pistas originales
+
+**Músicos:**
+- Aprender nuevas canciones con video/audio
+- Transponer a tu tono de instrumento
+- Agregar notas de presentación
+- Seguir tu librería de canciones
+
+**Equipos de Alabanza:**
+- Compartir setlists fácilmente
+- Todos tienen las mismas partituras
+- Agregar pistas de práctica
+- Colaborar en arreglos
+
+### 🔒 Privacidad y Seguridad
+
+- ✅ Todos los datos guardados localmente en tu navegador
+- ✅ Sin servidor, sin tracking, sin analytics
+- ✅ Exportar/importar para respaldo
+- ✅ Funciona completamente offline
+- ✅ Tus canciones permanecen privadas
+
+### 📱 Soporte Móvil
+
+- ✅ Diseño completamente responsive
+- ✅ Controles amigables al tacto
+- ✅ Funciona en tablets y teléfonos
+- ✅ Modo horizontal recomendado para tablets
+- ✅ Añade a pantalla principal para experiencia tipo app
+
+### 🆘 Soporte
+
+- 📖 **Modal de Ayuda**: Click en icono ℹ️ (guía bilingüe)
+- 🐛 **Issues**: Abre un issue en GitHub
+- 💬 **Preguntas**: GitHub Discussions
+- 📧 **Contacto**: Daniel Chay Perea
 
 ### 📄 Licencia
 
-Este proyecto es código abierto y disponible para uso personal y ministerial.
+Licencia MIT - Gratis para uso personal y ministerial.
 
-
-### 📄 AUTOR
-
-Daniel Chay Perea
 ---
 
-**Made with ❤️ for worship leaders and musicians**  
-**Hecho con ❤️ para líderes de alabanza y músicos**
+## 📊 Version History
+
+- **v11.3.4** - Bulk delete, dual video/audio embeds, menu reorder
+- **v11.3** - Bilingual help, comments system, export improvements
+- **v11.2** - 3-level menu structure
+- **v11.0** - Artist-based organization
+- **v10.x** - Core features and performance modes
+
+See [CHANGELOG.md](CHANGELOG.md) for complete history.
+
+---
+
+### 📄 Autor
+
+Daniel Chay Perea
+
+**Made with ❤️ for worship leaders and musicians worldwide**  
+**Hecho con ❤️ para líderes de alabanza y músicos en todo el mundo**
+
+🎸 **ToneBook v11.3.4** - Worship Made Simple
