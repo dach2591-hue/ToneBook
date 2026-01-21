@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Version: v11.3.4-DUAL-EMBED - Generated: 2026-01-20 14:00:00 -->
+<!-- Version: v11.4.0-DARK-MODE - Generated: 2026-01-21 15:00:00 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -16,6 +16,20 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Tailwind Dark Mode Configuration -->
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {}
+        }
+      }
+    </script>
+    
+    <!-- Chord Diagram Library -->
+    <script src="https://unpkg.com/@tombatossals/react-chords@latest/dist/Chord.js"></script>
+    
     <style>
       /* Responsive Design for All Devices */
       @media (max-width: 640px) {
@@ -45,6 +59,14 @@
         /* Removed !important so inline fontSize styles work */
         h1 { font-size: 3rem; }
         h2 { font-size: 2.5rem; }
+      }
+      
+      /* Force light-colored icons in collapsed sidebar dark mode */
+      .dark .sidebar-container svg {
+        color: inherit;
+      }
+      .dark .sidebar-container.w-16 button svg {
+        color: #e5e7eb !important;
       }
     </style>
 </head>
@@ -78,6 +100,26 @@
                 <circle cx="17" cy="14" r="2" fill="currentColor"/>
                 <ellipse cx="17" cy="14.2" rx="2.2" ry="1.5" fill="currentColor"/>
                 <rect x="19" y="7" width="2" height="7.5" rx="1" fill="currentColor"/>
+            </svg>
+        );
+        
+        const Sun = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+        );
+        
+        const Moon = ({ size = 24 }) => (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
             </svg>
         );
         
@@ -339,6 +381,11 @@
           const [showHelpModal, setShowHelpModal] = useState(false);
           const [showDeleteModal, setShowDeleteModal] = useState(false);
           const [deleteConfirmText, setDeleteConfirmText] = useState('');
+          const [darkMode, setDarkMode] = useState(() => {
+            const saved = localStorage.getItem('darkMode');
+            return saved ? JSON.parse(saved) : false;
+          });
+          const [showChordDiagram, setShowChordDiagram] = useState(null); // {chord: "C", position: {x, y}}
           const [helpLanguage, setHelpLanguage] = useState('en'); // 'en' or 'es'
           const [showLiveMode, setShowLiveMode] = useState(false);
           const [liveSectionIndex, setLiveSectionIndex] = useState(0);
@@ -354,7 +401,7 @@
             deleteSongs: false, // Delete section
             allSongs: false, // All Songs submenu collapsed by default
             artists: false, // Artists submenu collapsed by default
-            customFolders: false // Custom Folders submenu collapsed by default
+            customFolders: false // Custom Libraries submenu collapsed by default
           });
           const [metronomeAudioMuted, setMetronomeAudioMuted] = useState(true);
           const [performanceFontSize, setPerformanceFontSize] = useState(100);
@@ -367,10 +414,17 @@
 
           useEffect(() => {
             loadSongs();
-          
-          
-
           }, []);
+          
+          // Dark Mode persistence
+          useEffect(() => {
+            localStorage.setItem('darkMode', JSON.stringify(darkMode));
+            if (darkMode) {
+              document.documentElement.classList.add('dark');
+            } else {
+              document.documentElement.classList.remove('dark');
+            }
+          }, [darkMode]);
           
           // AUTO-ADVANCE TIMER FOR LIVE MODE
           useEffect(() => {
@@ -1679,7 +1733,7 @@ const copyToClipboard = async () => {
             setShowExportModal(true);
           };
           
-          const exportSongs = (songsToExport, filename) => {
+          const exportSongs = async (songsToExport, filename) => {
             if (songsToExport.length === 0) {
               alert('No songs to export!');
               return;
@@ -1703,6 +1757,35 @@ const copyToClipboard = async () => {
             
             const dataStr = JSON.stringify(songsWithFolderNames, null, 2);
             const blob = new Blob([dataStr], { type: 'application/json' });
+            
+            // Try Web Share API first (mobile devices)
+            if (navigator.share && navigator.canShare) {
+              try {
+                const file = new File([blob], filename, { type: 'application/json' });
+                
+                // Check if files can be shared
+                if (navigator.canShare({ files: [file] })) {
+                  await navigator.share({
+                    files: [file],
+                    title: 'ToneBook Songs',
+                    text: `Export of ${songsToExport.length} song${songsToExport.length > 1 ? 's' : ''} from ToneBook`
+                  });
+                  
+                  setShowExportModal(false);
+                  return; // Success! Exit early
+                }
+              } catch (error) {
+                // User cancelled or error occurred
+                if (error.name === 'AbortError') {
+                  // User cancelled, do nothing
+                  return;
+                }
+                // If share failed, fall through to download
+                console.log('Web Share not available, using download fallback');
+              }
+            }
+            
+            // Fallback: Traditional download (desktop or unsupported devices)
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -2018,11 +2101,11 @@ const copyToClipboard = async () => {
               
               {showImportModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4">
                     <h2 className="text-xl font-bold mb-4">Import from Text</h2>
                     <p className="text-sm text-gray-600 mb-4">Paste chord text from any website. The app will try to convert it to the correct format.</p>
                     <textarea value={importText} onChange={(e) => setImportText(e.target.value)}
-                      className="w-full h-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+                      className="w-full h-64 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
                       placeholder="Paste your chord text here..." />
                     <div className="flex gap-2 mt-4">
                       <button onClick={parseImportedText} className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Import</button>
@@ -2035,7 +2118,7 @@ const copyToClipboard = async () => {
               
               {showNewFolderModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
                     <h2 className="text-xl font-bold mb-4">New Folder</h2>
                     <input 
                       type="text" 
@@ -2043,7 +2126,7 @@ const copyToClipboard = async () => {
                       onChange={(e) => setNewFolderName(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && createFolder()}
                       placeholder="Folder name..."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       autoFocus
                     />
                     <div className="flex gap-2 mt-4">
@@ -2059,7 +2142,7 @@ const copyToClipboard = async () => {
               
               {showMoveSongModal && songToMove && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
                     <h2 className="text-xl font-bold mb-4">Add "{songToMove.title}" to Folders</h2>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {folders.length === 0 ? (
@@ -2068,7 +2151,7 @@ const copyToClipboard = async () => {
                         folders.map(folder => {
                           const isInFolder = songToMove.folders && songToMove.folders.includes(folder.id);
                           return (
-                            <div key={folder.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                            <div key={folder.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white">
                               <div className="flex items-center gap-2">
                                 <Folder size={16} />
                                 <span>{folder.name}</span>
@@ -2101,7 +2184,7 @@ const copyToClipboard = async () => {
               
               {showImportFolderModal && importedSongsData && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
                     <h2 className="text-xl font-bold mb-4">Import {importedSongsData.length} Songs</h2>
                     <p className="text-sm text-gray-600 mb-4">Add these songs to a folder?</p>
                     
@@ -2137,7 +2220,7 @@ const copyToClipboard = async () => {
                           onChange={(e) => setImportFolderName(e.target.value)}
                           onKeyPress={(e) => e.key === 'Enter' && createFolderAndImport()}
                           placeholder="New folder name..."
-                          className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                         <button 
                           onClick={createFolderAndImport}
@@ -2157,16 +2240,16 @@ const copyToClipboard = async () => {
               
               {showDuplicateModal && duplicateSongs.length > 0 && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-lg w-full mx-4">
                     <h2 className="text-xl font-bold mb-4">Duplicate Songs Found</h2>
                     <p className="text-sm text-gray-600 mb-4">
                       Found {duplicateSongs.length} song(s) that already exist in your library.
                     </p>
                     
                     <div className="bg-gray-50 rounded p-4 mb-4 max-h-48 overflow-y-auto">
-                      <p className="text-sm font-medium mb-2">Duplicates:</p>
+                      <p className="text-sm font-medium dark:text-gray-200 mb-2">Duplicates:</p>
                       {duplicateSongs.slice(0, 5).map((dup, idx) => (
-                        <p key={idx} className="text-sm text-gray-700">• {dup.imported.title} ({dup.imported.originalKey})</p>
+                        <p key={idx} className="text-sm text-gray-700 dark:text-gray-200">• {dup.imported.title} ({dup.imported.originalKey})</p>
                       ))}
                       {duplicateSongs.length > 5 && (
                         <p className="text-sm text-gray-500 mt-1">...and {duplicateSongs.length - 5} more</p>
@@ -2207,9 +2290,9 @@ const copyToClipboard = async () => {
               
               {showExportModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
-                    <h2 className="text-xl font-bold mb-4">Export Songs</h2>
-                    <p className="text-sm text-gray-600 mb-4">Choose what to export:</p>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+                    <h2 className="text-xl font-bold dark:text-white mb-4">Export Songs</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Choose what to export:</p>
                     
                     <div className="space-y-3">
                       {/* Export All */}
@@ -2255,7 +2338,7 @@ const copyToClipboard = async () => {
                       
                       {/* Export by Artist Header */}
                       <div className="px-2">
-                        <div className="text-sm font-bold text-gray-700">🎤 Export by Artist:</div>
+                        <div className="text-sm font-bold text-gray-700 dark:text-gray-200">🎤 Export by Artist:</div>
                       </div>
                       
                       {/* Artists List */}
@@ -2309,22 +2392,22 @@ const copyToClipboard = async () => {
                                   alert(`${artistSongs.length} songs exported!`);
                                   setShowExportModal(false);
                                 }}
-                                className="w-full text-left px-3 py-1.5 hover:bg-gray-100 rounded text-sm flex items-center justify-between group">
-                                <span className="text-gray-700 group-hover:text-blue-600">• {artist}</span>
-                                <span className="text-xs text-gray-500">({artistSongs.length})</span>
+                                className="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-sm flex items-center justify-between group">
+                                <span className="text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">• {artist}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">({artistSongs.length})</span>
                               </button>
                             );
                           });
                         })()}
                       </div>
                       
-                      {/* Custom Folders Section */}
+                      {/* Custom Libraries Section */}
                       {folders.length > 0 && (
                         <>
                           <div className="border-t pt-3 mt-3"></div>
                           
                           <div className="px-2">
-                            <div className="text-sm font-bold text-gray-700">📁 Export by Custom Folder:</div>
+                            <div className="text-sm font-bold text-gray-700 dark:text-gray-200">📁 Export by Custom Library:</div>
                           </div>
                           
                           <div className="pl-4 space-y-1 max-h-48 overflow-y-auto">
@@ -2361,9 +2444,9 @@ const copyToClipboard = async () => {
                                     alert(`${folderSongs.length} songs exported!`);
                                     setShowExportModal(false);
                                   }}
-                                  className="w-full text-left px-3 py-1.5 hover:bg-gray-100 rounded text-sm flex items-center justify-between group">
-                                  <span className="text-gray-700 group-hover:text-blue-600">• {folder.name}</span>
-                                  <span className="text-xs text-gray-500">({folderSongs.length})</span>
+                                  className="w-full text-left px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-sm flex items-center justify-between group">
+                                  <span className="text-gray-700 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">• {folder.name}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">({folderSongs.length})</span>
                                 </button>
                               );
                             })}
@@ -2373,13 +2456,13 @@ const copyToClipboard = async () => {
                       
                       <button 
                         onClick={() => setShowExportModal(false)}
-                        className="w-full bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 mt-4">
+                        className="w-full bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white px-6 py-2 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 mt-4">
                         Cancel
                       </button>
                     </div>
                     
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                      <p className="text-xs text-blue-800">
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-blue-800 dark:text-blue-200">
                         💡 Tip: Export by artist or folder to share specific songs with your band!
                       </p>
                     </div>
@@ -2390,10 +2473,10 @@ const copyToClipboard = async () => {
               {/* Help Modal */}
               {showHelpModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={() => setShowHelpModal(false)}>
-                  <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-2xl font-bold">📖 ToneBook {helpLanguage === 'en' ? 'Guide' : 'Guía'}</h2>
-                      <button onClick={() => setShowHelpModal(false)} className="text-gray-500 hover:text-gray-700">
+                      <h2 className="text-2xl font-bold dark:text-white">📖 ToneBook {helpLanguage === 'en' ? 'Guide' : 'Guía'}</h2>
+                      <button onClick={() => setShowHelpModal(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                         <X size={24} />
                       </button>
                     </div>
@@ -2416,18 +2499,18 @@ const copyToClipboard = async () => {
                     
                     {helpLanguage === 'en' ? (
                       // ENGLISH CONTENT
-                      <div className="space-y-4 text-sm">
+                      <div className="space-y-4 text-sm dark:text-gray-200">
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🎵 Creating Songs</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🎵 Creating Songs</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Click <strong>+ New Song</strong> to create a song</li>
                             <li>Add <strong>Title</strong>, <strong>Artist</strong>, <strong>Key</strong>, and <strong>BPM</strong></li>
-                            <li>Use <code>[Intro x2]</code> for sections</li>
-                            <li>Use <code>//8 measures</code> for duration</li>
-                            <li>Use <code>[C]</code>, <code>[Am]</code> for chords</li>
-                            <li>Use <code>-- Comment here</code> for notes (appears in gray, smaller text)</li>
+                            <li>Use <code className="dark:bg-gray-700 dark:text-gray-200">[Intro x2]</code> for sections</li>
+                            <li>Use <code className="dark:bg-gray-700 dark:text-gray-200">//8 measures</code> for duration</li>
+                            <li>Use <code className="dark:bg-gray-700 dark:text-gray-200">[C]</code>, <code className="dark:bg-gray-700 dark:text-gray-200">[Am]</code> for chords</li>
+                            <li>Use <code className="dark:bg-gray-700 dark:text-gray-200">-- Comment here</code> for notes (appears in gray, smaller text)</li>
                           </ul>
-                          <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
+                          <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono dark:text-gray-200">
                             [Verse 1]<br/>
                             [C]Amazing [G]grace<br/>
                             -- Piano here, keyboard only<br/>
@@ -2436,20 +2519,20 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">📁 Organization</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">📁 Organization</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Search</strong>: Search by song title, artist, or key across all songs</li>
                             <li><strong>All Songs</strong>: View all songs alphabetically</li>
                             <li><strong>Artists</strong>: Songs grouped by artist</li>
-                            <li><strong>Custom Folders</strong>: Create your own folders (e.g., "Sunday Service", "Christmas")</li>
+                            <li><strong>Custom Libraries</strong>: Create your own folders (e.g., "Sunday Service", "Christmas")</li>
                             <li>Click 📍 to pin songs for setlists</li>
-                            <li>Click 📁 to add to custom folders</li>
-                            <li>Drag songs to custom folders on desktop</li>
+                            <li>Click 📁 to add to custom libraries</li>
+                            <li>Drag songs to custom libraries on desktop</li>
                           </ul>
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🎭 Performance Mode</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🎭 Performance Mode</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Clean view for live performance</li>
                             <li>Transpose chords in real-time</li>
@@ -2462,7 +2545,7 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🎬 Live Mode</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🎬 Live Mode</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Automatic section advancement</li>
                             <li>Visual progress bar</li>
@@ -2473,29 +2556,29 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">📤 Import/Export</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">📤 Import/Export</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Export All</strong>: Backup your entire library</li>
                             <li><strong>Export by Artist</strong>: Share specific artist songs</li>
-                            <li><strong>Export Custom Folder</strong>: Share setlists with your band</li>
+                            <li><strong>Export Custom Library</strong>: Share setlists with your band</li>
                             <li><strong>Import</strong>: Merge songs from .tone files</li>
                             <li>Folders are created automatically on import</li>
                           </ul>
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🗑️ Bulk Delete</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🗑️ Bulk Delete</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Delete Entire Library</strong>: Remove all songs (type DELETE to confirm)</li>
                             <li><strong>Delete by Artist</strong>: Remove all songs from specific artist</li>
-                            <li><strong>Delete by Folder</strong>: Remove all songs in a custom folder</li>
+                            <li><strong>Delete by Folder</strong>: Remove all songs in a custom library</li>
                             <li>⚠️ All deletions are permanent - export backups first!</li>
                             <li>Great for cleaning up after importing new versions</li>
                           </ul>
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🎥🎵 Video & Audio Embeds</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🎥🎵 Video & Audio Embeds</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Add Video</strong> (YouTube): Paste link or iframe code</li>
                             <li><strong>Add Audio</strong> (Spotify, Apple Music): Paste link or iframe code</li>
@@ -2514,7 +2597,18 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">📱 Mobile Tips</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🌙 Dark Mode</h3>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>Click the <strong>☀️/🌙 icon</strong> in the sidebar header to toggle</li>
+                            <li>Your preference is saved automatically</li>
+                            <li>Perfect for low-light environments and evening services</li>
+                            <li>Available in main view and Performance Mode</li>
+                            <li>Live Mode stays light for projection clarity</li>
+                          </ul>
+                        </section>
+                        
+                        <section>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">📱 Mobile Tips</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Use landscape mode on tablets for best experience</li>
                             <li>Arrow buttons (↑↓) to reorder pinned songs</li>
@@ -2523,10 +2617,10 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">💡 Pro Tips</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">💡 Pro Tips</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Export regularly as backup before important services</li>
-                            <li>Use Custom Folders for setlists (e.g., "Easter Sunday")</li>
+                            <li>Use Custom Libraries for setlists (e.g., "Easter Sunday")</li>
                             <li>Pin songs in order to create your setlist</li>
                             <li>Add measure counts for accurate Live Mode timing</li>
                             <li>Use -- comments for performance notes (dynamics, cues, etc.)</li>
@@ -2535,18 +2629,18 @@ const copyToClipboard = async () => {
                       </div>
                     ) : (
                       // SPANISH CONTENT
-                      <div className="space-y-4 text-sm">
+                      <div className="space-y-4 text-sm dark:text-gray-200">
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🎵 Crear Canciones</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🎵 Crear Canciones</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Haz clic en <strong>+ Nueva Canción</strong> para crear una canción</li>
                             <li>Agrega <strong>Título</strong>, <strong>Artista</strong>, <strong>Tono</strong>, y <strong>BPM</strong></li>
-                            <li>Usa <code>[Intro x2]</code> para secciones</li>
-                            <li>Usa <code>//8 measures</code> para duración</li>
-                            <li>Usa <code>[C]</code>, <code>[Am]</code> para acordes</li>
-                            <li>Usa <code>-- Comentario aquí</code> para notas (aparece en gris, texto más pequeño)</li>
+                            <li>Usa <code className="dark:bg-gray-700 dark:text-gray-200">[Intro x2]</code> para secciones</li>
+                            <li>Usa <code className="dark:bg-gray-700 dark:text-gray-200">//8 measures</code> para duración</li>
+                            <li>Usa <code className="dark:bg-gray-700 dark:text-gray-200">[C]</code>, <code className="dark:bg-gray-700 dark:text-gray-200">[Am]</code> para acordes</li>
+                            <li>Usa <code className="dark:bg-gray-700 dark:text-gray-200">-- Comentario aquí</code> para notas (aparece en gris, texto más pequeño)</li>
                           </ul>
-                          <div className="mt-2 p-2 bg-gray-100 rounded text-xs font-mono">
+                          <div className="mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded text-xs font-mono dark:text-gray-200">
                             [Verso 1]<br/>
                             [C]Sublime [G]gracia<br/>
                             -- Piano aquí, solo teclado<br/>
@@ -2555,20 +2649,20 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">📁 Organización</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">📁 Organización</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Búsqueda</strong>: Busca por nombre de canción, artista o tono en todas las canciones</li>
                             <li><strong>Todas las Canciones</strong>: Ver todas alfabéticamente</li>
                             <li><strong>Artistas</strong>: Canciones agrupadas por artista</li>
-                            <li><strong>Carpetas Personalizadas</strong>: Crea tus propias carpetas (ej: "Domingo 21", "Navidad")</li>
+                            <li><strong>Bibliotecas Personalizadas</strong>: Crea tus propias carpetas (ej: "Domingo 21", "Navidad")</li>
                             <li>Haz clic en 📍 para fijar canciones en setlists</li>
-                            <li>Haz clic en 📁 para agregar a carpetas personalizadas</li>
+                            <li>Haz clic en 📁 para agregar a bibliotecas personalizadas</li>
                             <li>Arrastra canciones a carpetas en escritorio</li>
                           </ul>
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🎭 Modo Presentación</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🎭 Modo Presentación</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Vista limpia para presentación en vivo</li>
                             <li>Transpone acordes en tiempo real</li>
@@ -2581,7 +2675,7 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🎬 Modo En Vivo</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🎬 Modo En Vivo</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Avance automático de secciones</li>
                             <li>Barra de progreso visual</li>
@@ -2592,29 +2686,29 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">📤 Importar/Exportar</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">📤 Importar/Exportar</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Exportar Todo</strong>: Respaldo de toda tu librería</li>
                             <li><strong>Exportar por Artista</strong>: Comparte canciones de un artista específico</li>
-                            <li><strong>Exportar Carpeta Personalizada</strong>: Comparte setlists con tu banda</li>
+                            <li><strong>Exportar Biblioteca Personalizada</strong>: Comparte setlists con tu banda</li>
                             <li><strong>Importar</strong>: Combina canciones de archivos .tone</li>
                             <li>Las carpetas se crean automáticamente al importar</li>
                           </ul>
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🗑️ Borrado Masivo</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🗑️ Borrado Masivo</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Borrar Librería Completa</strong>: Elimina todas las canciones (escribe DELETE para confirmar)</li>
                             <li><strong>Borrar por Artista</strong>: Elimina todas las canciones de un artista específico</li>
-                            <li><strong>Borrar por Carpeta</strong>: Elimina todas las canciones en una carpeta personalizada</li>
+                            <li><strong>Borrar por Carpeta</strong>: Elimina todas las canciones en una biblioteca personalizada</li>
                             <li>⚠️ Todos los borrados son permanentes - ¡exporta respaldos primero!</li>
                             <li>Ideal para limpiar después de importar nuevas versiones</li>
                           </ul>
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">🎥🎵 Videos y Audio Integrados</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🎥🎵 Videos y Audio Integrados</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Agregar Video</strong> (YouTube): Pega link o código iframe</li>
                             <li><strong>Agregar Audio</strong> (Spotify, Apple Music): Pega link o código iframe</li>
@@ -2633,7 +2727,18 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">📱 Consejos Móvil</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">🌙 Modo Oscuro</h3>
+                          <ul className="list-disc pl-5 space-y-1">
+                            <li>Haz clic en el <strong>icono ☀️/🌙</strong> en el encabezado del menú lateral</li>
+                            <li>Tu preferencia se guarda automáticamente</li>
+                            <li>Perfecto para ambientes con poca luz y servicios nocturnos</li>
+                            <li>Disponible en vista principal y Modo Presentación</li>
+                            <li>Modo En Vivo permanece claro para mejor proyección</li>
+                          </ul>
+                        </section>
+                        
+                        <section>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">📱 Consejos Móvil</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Usa modo horizontal en tablets para mejor experiencia</li>
                             <li>Botones de flecha (↑↓) para reordenar canciones fijadas</li>
@@ -2642,10 +2747,10 @@ const copyToClipboard = async () => {
                         </section>
                         
                         <section>
-                          <h3 className="font-bold text-lg mb-2">💡 Consejos Pro</h3>
+                          <h3 className="font-bold text-lg mb-2 dark:text-white">💡 Consejos Pro</h3>
                           <ul className="list-disc pl-5 space-y-1">
                             <li>Exporta regularmente como respaldo antes de servicios importantes</li>
-                            <li>Usa Carpetas Personalizadas para setlists (ej: "Domingo Resurrección")</li>
+                            <li>Usa Bibliotecas Personalizadas para setlists (ej: "Domingo Resurrección")</li>
                             <li>Fija canciones en orden para crear tu setlist</li>
                             <li>Agrega conteos de compases para timing preciso en Modo En Vivo</li>
                             <li>Usa comentarios -- para notas de presentación (dinámicas, cues, etc.)</li>
@@ -2654,9 +2759,9 @@ const copyToClipboard = async () => {
                       </div>
                     )}
                     
-                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800">
-                        <strong>ToneBook v11.3.4</strong> - {helpLanguage === 'en' ? 'Made for worship leaders and musicians' : 'Hecho para líderes de alabanza y músicos'} 🎸
+                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-800 dark:text-blue-200">
+                        <strong>ToneBook v11.4.0</strong> - {helpLanguage === 'en' ? 'Made for worship leaders and musicians' : 'Hecho para líderes de alabanza y músicos'} 🎸
                       </p>
                     </div>
                     
@@ -2669,18 +2774,19 @@ const copyToClipboard = async () => {
                 </div>
               )}
 
+
               {/* Delete Modal */}
               {showDeleteModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
-                    <h2 className="text-xl font-bold mb-4 text-red-600">⚠️ Delete Songs</h2>
-                    <p className="text-sm text-gray-600 mb-4">Choose what to delete:</p>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 max-h-[80vh] overflow-y-auto">
+                    <h2 className="text-xl font-bold mb-4 text-red-600 dark:text-red-400">⚠️ Delete Songs</h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">Choose what to delete:</p>
                     
                     <div className="space-y-3">
                       {/* Delete Entire Library */}
-                      <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                        <div className="font-bold text-red-700 mb-2">🗑️ Delete Entire Library</div>
-                        <p className="text-xs text-red-600 mb-3">
+                      <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-lg p-4">
+                        <div className="font-bold text-red-700 dark:text-red-400 mb-2">🗑️ Delete Entire Library</div>
+                        <p className="text-xs text-red-600 dark:text-red-300 mb-3">
                           ⚠️ This will permanently delete ALL {songs.length} songs. This action CANNOT be undone!
                         </p>
                         <input
@@ -2688,7 +2794,7 @@ const copyToClipboard = async () => {
                           placeholder="Type DELETE to confirm"
                           value={deleteConfirmText}
                           onChange={(e) => setDeleteConfirmText(e.target.value)}
-                          className="w-full px-3 py-2 border border-red-300 rounded mb-2 text-sm"
+                          className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-3 py-2 border border-red-300 dark:border-red-700 dark:bg-gray-700 dark:text-white rounded mb-2 text-sm"
                         />
                         <button 
                           onClick={deleteEntireLibrary}
@@ -2703,11 +2809,11 @@ const copyToClipboard = async () => {
                         </button>
                       </div>
                       
-                      <div className="border-t pt-3 mt-3"></div>
+                      <div className="border-t border-gray-300 dark:border-gray-600 dark:border-gray-600 pt-3 mt-3"></div>
                       
                       {/* Delete by Artist Header */}
                       <div className="px-2">
-                        <div className="text-sm font-bold text-gray-700">🎤 Delete by Artist:</div>
+                        <div className="text-sm font-bold text-gray-700 dark:text-gray-200">🎤 Delete by Artist:</div>
                       </div>
                       
                       {/* Artists List */}
@@ -2734,23 +2840,23 @@ const copyToClipboard = async () => {
                               <button 
                                 key={artist}
                                 onClick={() => deleteByArtist(artist)}
-                                className="w-full text-left px-3 py-1.5 hover:bg-red-50 rounded text-sm flex items-center justify-between group border border-transparent hover:border-red-200"
+                                className="w-full text-left px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm flex items-center justify-between group border border-transparent hover:border-red-200 dark:hover:border-red-800"
                               >
-                                <span className="text-gray-700 group-hover:text-red-600">• {artist}</span>
-                                <span className="text-xs text-gray-500">({artistSongs.length})</span>
+                                <span className="text-gray-700 dark:text-gray-200 group-hover:text-red-600 dark:group-hover:text-red-400">• {artist}</span>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">({artistSongs.length})</span>
                               </button>
                             );
                           });
                         })()}
                       </div>
                       
-                      {/* Custom Folders Section */}
+                      {/* Custom Libraries Section */}
                       {folders.length > 0 && (
                         <>
                           <div className="border-t pt-3 mt-3"></div>
                           
                           <div className="px-2">
-                            <div className="text-sm font-bold text-gray-700">📁 Delete by Custom Folder:</div>
+                            <div className="text-sm font-bold text-gray-700 dark:text-gray-200">📁 Delete by Custom Library:</div>
                           </div>
                           
                           <div className="pl-4 space-y-1 max-h-48 overflow-y-auto">
@@ -2760,10 +2866,10 @@ const copyToClipboard = async () => {
                                 <button 
                                   key={folder.id}
                                   onClick={() => deleteByFolder(folder.id, folder.name)}
-                                  className="w-full text-left px-3 py-1.5 hover:bg-red-50 rounded text-sm flex items-center justify-between group border border-transparent hover:border-red-200"
+                                  className="w-full text-left px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-900/20 rounded text-sm flex items-center justify-between group border border-transparent hover:border-red-200 dark:hover:border-red-800"
                                 >
-                                  <span className="text-gray-700 group-hover:text-red-600">• {folder.name}</span>
-                                  <span className="text-xs text-gray-500">({folderSongs.length})</span>
+                                  <span className="text-gray-700 dark:text-gray-200 group-hover:text-red-600 dark:group-hover:text-red-400">• {folder.name}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">({folderSongs.length})</span>
                                 </button>
                               );
                             })}
@@ -2776,13 +2882,13 @@ const copyToClipboard = async () => {
                           setShowDeleteModal(false);
                           setDeleteConfirmText('');
                         }}
-                        className="w-full bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 mt-4">
+                        className="w-full bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white px-6 py-2 rounded-lg hover:bg-gray-400 dark:hover:bg-gray-500 mt-4">
                         Cancel
                       </button>
                     </div>
                     
-                    <div className="mt-4 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <p className="text-xs text-yellow-800">
+                    <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800 dark:border-yellow-800">
+                      <p className="text-xs text-yellow-800 dark:text-yellow-200">
                         ⚠️ <strong>Warning:</strong> Deleted songs cannot be recovered. Make sure to export backups regularly!
                       </p>
                     </div>
@@ -2792,7 +2898,7 @@ const copyToClipboard = async () => {
 
               
           {viewMode ? (
-                <div className="flex-1 flex flex-col bg-white">
+                <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
                   <div className={`fixed top-0 left-0 right-0 z-50 bg-gray-800 text-white p-4 transition-all duration-300 ${menuVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'}`}>
                     <div className="max-w-4xl mx-auto flex items-center justify-between performance-header-mobile">
                       <div className="song-info-mobile">
@@ -2862,24 +2968,24 @@ const copyToClipboard = async () => {
                     </div>
                   </div>
 
-                  <div className={`fixed top-0 left-0 right-0 z-40 bg-gray-100 border-b border-gray-200 p-3 transition-all duration-300 ${menuVisible ? 'opacity-100' : 'opacity-0 -translate-y-full pointer-events-none'}`} style={{top: menuVisible ? '100px' : '0'}}>
+                  <div className={`fixed top-0 left-0 right-0 z-40 bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3 transition-all duration-300 ${menuVisible ? 'opacity-100' : 'opacity-0 -translate-y-full pointer-events-none'}`} style={{top: menuVisible ? '100px' : '0'}}>
                     <div className="max-w-4xl mx-auto">
                       {/* Row 1: Display mode buttons */}
                       <div className="flex flex-wrap items-center gap-2 mb-3">
                         <button onClick={() => setViewDisplayMode('chords')}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'chords' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'chords' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'}`}>
                           Show Chords
                         </button>
                         <button onClick={() => setViewDisplayMode('lyrics')}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'lyrics' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'lyrics' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'}`}>
                           Lyrics Only
                         </button>
                         <button onClick={() => setViewDisplayMode('numbers')}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'numbers' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${viewDisplayMode === 'numbers' ? 'bg-blue-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'}`}>
                           Show Numbers
                         </button>
                         <button onClick={() => setColumnLayout(columnLayout === 1 ? 2 : 1)}
-                          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white text-gray-700 hover:bg-gray-50"
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600"
                           title="Toggle columns">
                           <Columns size={18} />{columnLayout} Col
                         </button>
@@ -2887,47 +2993,47 @@ const copyToClipboard = async () => {
                         {/* Transpose controls - inline on desktop, wrapped on mobile */}
                         {viewDisplayMode === 'chords' && (
                           <div className="flex items-center gap-2 ml-auto">
-                            <span className="text-sm font-medium text-gray-700">Transpose:</span>
-                            <button onClick={() => setTransposition(t => t - 1)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
-                            <span className="w-16 text-center font-medium">{transposition > 0 ? '+' : ''}{transposition}</span>
-                            <button onClick={() => setTransposition(t => t + 1)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Transpose:</span>
+                            <button onClick={() => setTransposition(t => t - 1)} className="w-10 h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-bold dark:text-white">-</button>
+                            <span className="w-16 text-center font-medium dark:text-white">{transposition > 0 ? '+' : ''}{transposition}</span>
+                            <button onClick={() => setTransposition(t => t + 1)} className="w-10 h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-bold dark:text-white">+</button>
                             {transposition !== 0 && (
-                              <button onClick={() => setTransposition(0)} className="ml-2 px-3 py-1 text-sm bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Reset</button>
+                              <button onClick={() => setTransposition(0)} className="ml-2 px-3 py-1 text-sm bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-500">Reset</button>
                             )}
                           </div>
                         )}
                       </div>
                       
                       {/* Row 2: Metronome, BPM, and Font controls */}
-                      <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-gray-200">
+                      <div className="flex flex-wrap items-center gap-4 pt-3 border-t border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-700">Metronome:</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Metronome:</span>
                           <button 
                             onClick={toggleMetronome}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium ${metronomeActive ? 'bg-green-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+                            className={`px-4 py-2 rounded-lg text-sm font-medium ${metronomeActive ? 'bg-green-600 text-white' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'}`}>
                             {metronomeActive ? '⏸ Stop' : '▶ Play'}
                           </button>
                           {metronomeActive && (
                             <div className="flex items-center gap-1">
                               {[...Array(parseInt(currentSong?.timeSignature?.match(/^(\d+)/)?.[1] || 4))].map((_, i) => (
-                                <div key={i} className={`w-3 h-3 rounded-full ${i === currentBeat - 1 ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                <div key={i} className={`w-3 h-3 rounded-full ${i === currentBeat - 1 ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
                               ))}
                             </div>
                           )}
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-700">BPM:</span>
-                          <button onClick={() => adjustMetronomeBpm(-5)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
-                          <span className="w-16 text-center font-medium">{metronomeBpm}</span>
-                          <button onClick={() => adjustMetronomeBpm(5)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">BPM:</span>
+                          <button onClick={() => adjustMetronomeBpm(-5)} className="w-10 h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-bold dark:text-white">-</button>
+                          <span className="w-16 text-center font-medium dark:text-white">{metronomeBpm}</span>
+                          <button onClick={() => adjustMetronomeBpm(5)} className="w-10 h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-bold dark:text-white">+</button>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-gray-700">Font:</span>
-                          <button onClick={() => setPerformanceFontSize(Math.max(50, performanceFontSize - 10))} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
-                          <span className="w-16 text-center font-medium text-sm">{performanceFontSize}%</span>
-                          <button onClick={() => setPerformanceFontSize(Math.min(200, performanceFontSize + 10))} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Font:</span>
+                          <button onClick={() => setPerformanceFontSize(Math.max(50, performanceFontSize - 10))} className="w-10 h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-bold dark:text-white">-</button>
+                          <span className="w-16 text-center font-medium text-sm dark:text-white">{performanceFontSize}%</span>
+                          <button onClick={() => setPerformanceFontSize(Math.min(200, performanceFontSize + 10))} className="w-10 h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-bold dark:text-white">+</button>
                         </div>
                       </div>
                     </div>
@@ -2995,7 +3101,7 @@ const copyToClipboard = async () => {
                           if (sections.length === 0) {
                             return (
                               <div className="flex-1 flex items-center justify-center">
-                                <div className="text-center text-gray-500">
+                                <div className="text-center text-gray-500 dark:text-gray-400">
                                   <p className="text-xl mb-2">No sections found</p>
                                   <p className="text-sm">Format: [INTRO x2]<br/>//8 measures</p>
                                 </div>
@@ -3172,7 +3278,7 @@ const copyToClipboard = async () => {
                                         ))}
                                       </div>
                                     )}
-                                    <p className="text-lg md:text-xl text-gray-600">
+                                    <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300">
                                       {section.measures * section.repeat} {(section.measures * section.repeat) === 1 ? 'measure' : 'measures'}
                                       {section.repeat > 1 ? ' (' + section.measures + ' × ' + section.repeat + ')' : ''}
                                       {' • ' + Math.round(duration) + 's'}
@@ -3207,7 +3313,7 @@ const copyToClipboard = async () => {
                               </div>
                               
                               {nextSection && (
-                                <div className="bg-gray-100 p-3 text-center border-t-2 border-gray-300 shrink-0">
+                                <div className="bg-gray-100 p-3 text-center border-t-2 border-gray-300 dark:border-gray-600 shrink-0">
                                   <p className="text-gray-700 text-lg">
                                     <span className="font-semibold">Next:</span> {nextSection.name}
                                     {nextSection.repeat > 1 ? ' (×' + nextSection.repeat + ')' : ''}
@@ -3220,7 +3326,7 @@ const copyToClipboard = async () => {
                         </div>
                       </div>
                     ) : columnLayout === 2 ? (
-                      <div className="max-w-7xl mx-auto grid grid-cols-2 gap-8 font-mono" style={{fontSize: `${performanceFontSize}%`}}>
+                      <div className="max-w-7xl mx-auto grid grid-cols-2 gap-8 font-mono dark:text-white" style={{fontSize: `${performanceFontSize}%`}}>
                         {(() => {
                           // Filter out //measures lines from display
                           const formattedLines = formatContent(filterMeasureLines(currentSong.content), transposition, viewDisplayMode, currentSong.originalKey);
@@ -3273,13 +3379,13 @@ const copyToClipboard = async () => {
                                 {leftSections.map((section, sIdx) => (
                                   <div key={`left-${sIdx}`}>
                                     {section.map((line, i) => (
-                                      <div key={i} className={line.isComment ? "leading-relaxed mb-1 text-gray-500 text-sm italic" : "leading-relaxed mb-1"}>
+                                      <div key={i} className={line.isComment ? "leading-relaxed mb-1 text-gray-500 dark:text-gray-400 text-sm italic" : "leading-relaxed mb-1"}>
                                         {line.isEmpty ? (<br />) : (
                                           line.parts.map((part, j) => (
                                             <span key={j} className={
-                                              part.type === 'comment' ? 'text-gray-500 text-sm italic' :
-                                              part.type === 'chord' ? 'font-bold text-black' : 
-                                              part.type === 'section' ? 'block font-bold text-blue-700 mt-4 mb-2' : ''
+                                              part.type === 'comment' ? 'text-gray-500 dark:text-gray-400 text-sm italic' :
+                                              part.type === 'chord' ? 'font-bold text-black dark:text-blue-400' : 
+                                              part.type === 'section' ? 'block font-bold text-blue-700 dark:text-blue-400 mt-4 mb-2' : ''
                                             } style={part.type === 'section' ? {fontSize: '1.3em'} : {}}>
                                               {part.content}
                                             </span>
@@ -3294,13 +3400,13 @@ const copyToClipboard = async () => {
                                 {rightSections.map((section, sIdx) => (
                                   <div key={`right-${sIdx}`}>
                                     {section.map((line, i) => (
-                                      <div key={i} className={line.isComment ? "leading-relaxed mb-1 text-gray-500 text-sm italic" : "leading-relaxed mb-1"}>
+                                      <div key={i} className={line.isComment ? "leading-relaxed mb-1 text-gray-500 dark:text-gray-400 text-sm italic" : "leading-relaxed mb-1"}>
                                         {line.isEmpty ? (<br />) : (
                                           line.parts.map((part, j) => (
                                             <span key={j} className={
-                                              part.type === 'comment' ? 'text-gray-500 text-sm italic' :
-                                              part.type === 'chord' ? 'font-bold text-black' : 
-                                              part.type === 'section' ? 'block font-bold text-blue-700 mt-4 mb-2' : ''
+                                              part.type === 'comment' ? 'text-gray-500 dark:text-gray-400 text-sm italic' :
+                                              part.type === 'chord' ? 'font-bold text-black dark:text-blue-400' : 
+                                              part.type === 'section' ? 'block font-bold text-blue-700 dark:text-blue-400 mt-4 mb-2' : ''
                                             } style={part.type === 'section' ? {fontSize: '1.3em'} : {}}>
                                               {part.content}
                                             </span>
@@ -3316,15 +3422,15 @@ const copyToClipboard = async () => {
                         })()}
                       </div>
                     ) : (
-                      <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap" style={{fontSize: `${performanceFontSize}%`}}>
+                      <div className="max-w-4xl mx-auto font-mono whitespace-pre-wrap dark:text-white" style={{fontSize: `${performanceFontSize}%`}}>
                         {formatContent(filterMeasureLines(currentSong.content), transposition, viewDisplayMode, currentSong.originalKey).map((line, i) => (
-                          <div key={i} className={line.isComment ? "leading-relaxed mb-1 text-gray-500 text-sm italic" : "leading-relaxed mb-1"}>
+                          <div key={i} className={line.isComment ? "leading-relaxed mb-1 text-gray-500 dark:text-gray-400 text-sm italic" : "leading-relaxed mb-1"}>
                             {line.isEmpty ? (<br />) : (
                               line.parts.map((part, j) => (
                                 <span key={j} className={
-                                  part.type === 'comment' ? 'text-gray-500 text-sm italic' :
-                                  part.type === 'chord' ? 'font-bold text-black' : 
-                                  part.type === 'section' ? 'block font-bold text-blue-700 mt-4 mb-2' : ''
+                                  part.type === 'comment' ? 'text-gray-500 dark:text-gray-400 text-sm italic' :
+                                  part.type === 'chord' ? 'font-bold text-black dark:text-blue-400' : 
+                                  part.type === 'section' ? 'block font-bold text-blue-700 dark:text-blue-400 mt-4 mb-2' : ''
                                 } style={part.type === 'section' ? {fontSize: '1.3em'} : {}}>
                                   {part.content}
                                 </span>
@@ -3339,19 +3445,29 @@ const copyToClipboard = async () => {
               ) : (
                 <>
                   {/* Sidebar - Responsive: desktop always visible, mobile hidden until hamburger clicked */}
-                  <div className={`sidebar-container ${menuCollapsed ? 'w-16' : 'w-80'} bg-white border-r border-gray-200 flex-col md:flex transition-all duration-300 ${mobileMenuOpen ? 'mobile-open flex' : 'hidden md:flex'}`}>
+                  <div className={`sidebar-container ${menuCollapsed ? 'w-16' : 'w-80'} bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex-col md:flex transition-all duration-300 ${mobileMenuOpen ? 'mobile-open flex' : 'hidden md:flex'}`}>
                     {/* Header with ToneBook title and collapse button */}
-                    <div className="p-4 border-b border-gray-200">
+                    <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                       <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <ToneBookIcon className="text-blue-600" size={24} />
-                          {!menuCollapsed && <h1 className="text-xl font-bold">ToneBook</h1>}
+                          <ToneBookIcon className="text-blue-600 dark:text-blue-400" size={24} />
+                          {!menuCollapsed && <h1 className="text-xl font-bold dark:text-white">ToneBook</h1>}
                         </div>
                         <div className="flex items-center gap-2">
+                          {/* Dark Mode Toggle */}
+                          {!menuCollapsed && (
+                            <button 
+                              onClick={() => setDarkMode(!darkMode)}
+                              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300 transition-colors"
+                              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+                            >
+                              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+                            </button>
+                          )}
                           {/* Collapse/Expand button - visible on all devices */}
                           <button 
                             onClick={() => setMenuCollapsed(!menuCollapsed)}
-                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300"
                             title={menuCollapsed ? "Expand menu" : "Collapse menu"}
                           >
                             {menuCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
@@ -3359,7 +3475,7 @@ const copyToClipboard = async () => {
                           {/* Close button - only visible on mobile */}
                           <button 
                             onClick={() => setMobileMenuOpen(false)}
-                            className="md:hidden p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+                            className="md:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300"
                             aria-label="Close menu"
                           >
                             <X size={24} />
@@ -3368,9 +3484,9 @@ const copyToClipboard = async () => {
                       </div>
                       
                       {!menuCollapsed && (
-                        <div className="p-4 border-b border-gray-200">
+                        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                           <input type="text" placeholder="Search songs..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-800 dark:text-white dark:placeholder-gray-400" />
                         </div>
                       )}
                     </div>
@@ -3378,13 +3494,13 @@ const copyToClipboard = async () => {
                     {!menuCollapsed && (
                       <div className="flex-1 overflow-y-auto">
                         {/* Create Song Section */}
-                        <div className="border-b border-gray-200">
+                        <div className="border-b border-gray-200 dark:border-gray-700">
                           <button 
                             onClick={() => setExpandedMenuSections({...expandedMenuSections, createSong: !expandedMenuSections.createSong})}
-                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white"
                           >
                             <div className="flex items-center gap-2">
-                              <Plus size={18} className="text-blue-600" />
+                              <Plus size={18} className="text-blue-600 dark:text-blue-400" />
                               <span className="font-medium text-sm">Create Song</span>
                             </div>
                             {expandedMenuSections.createSong ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -3399,13 +3515,13 @@ const copyToClipboard = async () => {
                         </div>
                         
                         {/* Songs Section - 3 Level Structure */}
-                        <div className="border-b border-gray-200">
+                        <div className="border-b border-gray-200 dark:border-gray-700">
                           <button 
                             onClick={() => setExpandedMenuSections({...expandedMenuSections, songs: !expandedMenuSections.songs})}
-                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white"
                           >
                             <div className="flex items-center gap-2">
-                              <Music size={18} className="text-blue-600" />
+                              <Music size={18} className="text-blue-600 dark:text-blue-400" />
                               <span className="font-medium text-sm">Songs</span>
                             </div>
                             {expandedMenuSections.songs ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -3420,20 +3536,20 @@ const copyToClipboard = async () => {
                                     setExpandedMenuSections({...expandedMenuSections, allSongs: !expandedMenuSections.allSongs});
                                     setSelectedFolder('all');
                                   }}
-                                  className={`px-4 py-2 cursor-pointer flex items-center gap-2 ${selectedFolder === 'all' ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}`}
+                                  className={`px-4 py-2 cursor-pointer flex items-center gap-2 ${selectedFolder === 'all' ? 'bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-200'}`}
                                 >
                                   <button 
                                     onClick={(e) => { 
                                       e.stopPropagation(); 
                                       setExpandedMenuSections({...expandedMenuSections, allSongs: !expandedMenuSections.allSongs});
                                     }}
-                                    className="hover:text-gray-600"
+                                    className="hover:text-gray-600 dark:hover:text-gray-300"
                                   >
                                     {expandedMenuSections.allSongs ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                   </button>
                                   <Music size={14} />
-                                  <span className="text-sm flex-1 font-medium">All Songs</span>
-                                  <span className="text-xs text-gray-500">{songs.length}</span>
+                                  <span className="text-sm flex-1 font-medium dark:text-gray-200">All Songs</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">{songs.length}</span>
                                 </div>
                                 
                                 {/* All Songs - alphabetically sorted */}
@@ -3452,13 +3568,13 @@ const copyToClipboard = async () => {
                                           e.currentTarget.style.opacity = '1';
                                         }}
                                         onClick={() => loadSong(song)}
-                                        className={`px-2 py-1.5 cursor-pointer text-xs hover:bg-gray-50 flex items-center gap-1 ${currentSong?.id === song.id ? 'bg-blue-50 text-blue-700' : ''}`}
+                                        className={`px-2 py-1.5 cursor-pointer text-xs hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-1 ${currentSong?.id === song.id ? 'bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'dark:text-gray-300'}`}
                                       >
-                                        {song.pinned && <span className="text-yellow-500">📌</span>}
+                                        {song.pinned && <span className="text-yellow-500 dark:text-yellow-400">📌</span>}
                                         <span className="flex-1 truncate">{song.title}</span>
                                         <button 
                                           onClick={(e) => { e.stopPropagation(); togglePin(song.id, e); }} 
-                                          className="text-gray-400 hover:text-yellow-500 p-0.5"
+                                          className="text-gray-400 dark:text-gray-500 hover:text-yellow-500 dark:hover:text-yellow-400 p-0.5"
                                           title={song.pinned ? "Unpin" : "Pin"}
                                         >
                                           {song.pinned ? '📌' : '📍'}
@@ -3466,7 +3582,7 @@ const copyToClipboard = async () => {
                                         {folders.length > 0 && (
                                           <button 
                                             onClick={(e) => { e.stopPropagation(); openMoveSongModal(song); }} 
-                                            className="text-gray-400 hover:text-blue-600 p-0.5"
+                                            className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 p-0.5"
                                             title="Add to folder"
                                           >
                                             <Folder size={12} />
@@ -3479,10 +3595,10 @@ const copyToClipboard = async () => {
                               </div>
                               
                               {/* SUBMENU 2: Artists */}
-                              <div className="border-b border-gray-100">
+                              <div className="border-b border-gray-100 dark:border-gray-700">
                                 <div 
                                   onClick={() => setExpandedMenuSections({...expandedMenuSections, artists: !expandedMenuSections.artists})}
-                                  className="px-4 py-2 cursor-pointer flex items-center gap-2 hover:bg-gray-50"
+                                  className="px-4 py-2 cursor-pointer flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white"
                                 >
                                   <button 
                                     onClick={(e) => { 
@@ -3494,8 +3610,8 @@ const copyToClipboard = async () => {
                                     {expandedMenuSections.artists ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                   </button>
                                   <Folder size={14} />
-                                  <span className="text-sm flex-1 font-medium">Artists</span>
-                                  <span className="text-xs text-gray-500">{(() => {
+                                  <span className="text-sm flex-1 font-medium dark:text-gray-200">Artists</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">{(() => {
                                     const artistsSet = new Set();
                                     songs.forEach(s => artistsSet.add(s.artist || 'Unknown Artist'));
                                     return artistsSet.size;
@@ -3534,14 +3650,14 @@ const copyToClipboard = async () => {
                                                 setSelectedFolder(artist);
                                                 setCollapsedFolders({...collapsedFolders, [artist]: !collapsedFolders[artist]});
                                               }}
-                                              className={`px-4 py-2 cursor-pointer flex items-center gap-2 ${selectedFolder === artist ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-50'}`}
+                                              className={`px-4 py-2 cursor-pointer flex items-center gap-2 ${selectedFolder === artist ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-200'}`}
                                             >
-                                              <div className="hover:text-gray-600">
+                                              <div className="hover:text-gray-600 dark:hover:text-gray-300">
                                                 {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                               </div>
                                               <Folder size={16} />
                                               <span className="text-sm flex-1">{artist}</span>
-                                              <span className="text-xs text-gray-500">{artistSongs.length}</span>
+                                              <span className="text-xs text-gray-500 dark:text-gray-400">{artistSongs.length}</span>
                                             </div>
                                             
                                             {/* Songs nested under artist - alphabetically sorted */}
@@ -3560,13 +3676,13 @@ const copyToClipboard = async () => {
                                                       e.currentTarget.style.opacity = '1';
                                                     }}
                                                     onClick={() => loadSong(song)}
-                                                    className={`px-2 py-1.5 cursor-pointer text-xs hover:bg-gray-50 flex items-center gap-1 ${currentSong?.id === song.id ? 'bg-blue-50 text-blue-700' : ''}`}
+                                                    className={`px-2 py-1.5 cursor-pointer text-xs hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-1 ${currentSong?.id === song.id ? 'bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'dark:text-gray-300'}`}
                                                   >
-                                                    {song.pinned && <span className="text-yellow-500">📌</span>}
+                                                    {song.pinned && <span className="text-yellow-500 dark:text-yellow-400">📌</span>}
                                                     <span className="flex-1 truncate">{song.title}</span>
                                                     <button 
                                                       onClick={(e) => { e.stopPropagation(); togglePin(song.id, e); }} 
-                                                      className="text-gray-400 hover:text-yellow-500 p-0.5"
+                                                      className="text-gray-400 dark:text-gray-500 hover:text-yellow-500 dark:hover:text-yellow-400 p-0.5"
                                                       title={song.pinned ? "Unpin" : "Pin"}
                                                     >
                                                       {song.pinned ? '📌' : '📍'}
@@ -3574,7 +3690,7 @@ const copyToClipboard = async () => {
                                                     {folders.length > 0 && (
                                                       <button 
                                                         onClick={(e) => { e.stopPropagation(); openMoveSongModal(song); }} 
-                                                        className="text-gray-400 hover:text-blue-600 p-0.5"
+                                                        className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 p-0.5"
                                                         title="Add to folder"
                                                       >
                                                         <Folder size={12} />
@@ -3592,12 +3708,12 @@ const copyToClipboard = async () => {
                                 )}
                               </div>
                               
-                              {/* SUBMENU 3: Custom Folders */}
+                              {/* SUBMENU 3: Custom Libraries */}
                               {folders.length > 0 && (
                                 <div className="border-b border-gray-100">
                                   <div 
                                     onClick={() => setExpandedMenuSections({...expandedMenuSections, customFolders: !expandedMenuSections.customFolders})}
-                                    className="px-4 py-2 cursor-pointer flex items-center gap-2 hover:bg-gray-50"
+                                    className="px-4 py-2 cursor-pointer flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white"
                                   >
                                     <button 
                                       onClick={(e) => { 
@@ -3609,11 +3725,11 @@ const copyToClipboard = async () => {
                                       {expandedMenuSections.customFolders ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                     </button>
                                     <Folder size={14} />
-                                    <span className="text-sm flex-1 font-medium">Custom Folders</span>
-                                    <span className="text-xs text-gray-500">{folders.length}</span>
+                                    <span className="text-sm flex-1 font-medium dark:text-gray-200">Custom Libraries</span>
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">{folders.length}</span>
                                   </div>
                                   
-                                  {/* Custom Folders */}
+                                  {/* Custom Libraries */}
                                   {expandedMenuSections.customFolders && (
                                     <div className="pl-4 pb-2">
                                       {folders.map(folder => {
@@ -3656,40 +3772,40 @@ const copyToClipboard = async () => {
                                                 setSelectedFolder(folder.id);
                                                 toggleFolderCollapse(folder.id);
                                               }}
-                                              className={`px-4 py-2 cursor-pointer flex items-center gap-2 ${selectedFolder === folder.id ? 'bg-blue-100 text-blue-700' : 'hover:bg-gray-50'}`}
+                                              className={`px-4 py-2 cursor-pointer flex items-center gap-2 ${selectedFolder === folder.id ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-gray-200'}`}
                                             >
-                                              <div className="hover:text-gray-600">
+                                              <div className="hover:text-gray-600 dark:hover:text-gray-300">
                                                 {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                               </div>
                                               <Folder size={16} />
                                               <span className="text-sm flex-1">{folder.name}</span>
-                                              <span className="text-xs text-gray-500">{folderSongs.length}</span>
-                                              <button onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }} className="text-red-600 hover:text-red-700">
+                                              <span className="text-xs text-gray-500 dark:text-gray-400">{folderSongs.length}</span>
+                                              <button onClick={(e) => { e.stopPropagation(); deleteFolder(folder.id); }} className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">
                                                 <Trash2 size={14} />
                                               </button>
                                             </div>
                                             
-                                            {/* Songs nested under custom folder - alphabetically sorted */}
+                                            {/* Songs nested under custom library - alphabetically sorted */}
                                             {isExpanded && (
                                               <div className="pl-8">
                                                 {folderSongs.slice().sort((a, b) => a.title.localeCompare(b.title)).map(song => (
                                                   <div 
                                                     key={song.id}
                                                     onClick={() => loadSong(song)}
-                                                    className={`px-2 py-1.5 cursor-pointer text-xs hover:bg-gray-50 flex items-center gap-1 ${currentSong?.id === song.id ? 'bg-blue-50 text-blue-700' : ''}`}
+                                                    className={`px-2 py-1.5 cursor-pointer text-xs hover:bg-gray-50 dark:hover:bg-gray-800 flex items-center gap-1 ${currentSong?.id === song.id ? 'bg-blue-50 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : 'dark:text-gray-300'}`}
                                                   >
-                                                    {song.pinned && <span className="text-yellow-500">📌</span>}
+                                                    {song.pinned && <span className="text-yellow-500 dark:text-yellow-400">📌</span>}
                                                     <span className="flex-1 truncate">{song.title}</span>
                                                     <button 
                                                       onClick={(e) => { e.stopPropagation(); togglePin(song.id, e); }} 
-                                                      className="text-gray-400 hover:text-yellow-500 p-0.5"
+                                                      className="text-gray-400 dark:text-gray-500 hover:text-yellow-500 dark:hover:text-yellow-400 p-0.5"
                                                       title={song.pinned ? "Unpin" : "Pin"}
                                                     >
                                                       {song.pinned ? '📌' : '📍'}
                                                     </button>
                                                     <button 
                                                       onClick={(e) => { e.stopPropagation(); openMoveSongModal(song); }} 
-                                                      className="text-gray-400 hover:text-blue-600 p-0.5"
+                                                      className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 p-0.5"
                                                       title="Add to folder"
                                                     >
                                                       <Folder size={12} />
@@ -3711,13 +3827,13 @@ const copyToClipboard = async () => {
                         </div>
                         
                         {/* Import/Export Section */}
-                        <div className="border-b border-gray-200">
+                        <div className="border-b border-gray-200 dark:border-gray-700">
                           <button 
                             onClick={() => setExpandedMenuSections({...expandedMenuSections, importExport: !expandedMenuSections.importExport})}
-                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white"
                           >
                             <div className="flex items-center gap-2">
-                              <Download size={18} className="text-green-600" />
+                              <Download size={18} className="text-green-600 dark:text-green-400" />
                               <span className="font-medium text-sm">Import/Export</span>
                             </div>
                             {expandedMenuSections.importExport ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -3736,13 +3852,13 @@ const copyToClipboard = async () => {
                         </div>
                         
                         {/* Delete Section */}
-                        <div className="border-b border-gray-200">
+                        <div className="border-b border-gray-200 dark:border-gray-700">
                           <button 
                             onClick={() => setExpandedMenuSections({...expandedMenuSections, deleteSongs: !expandedMenuSections.deleteSongs})}
-                            className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50"
+                            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 dark:text-white"
                           >
                             <div className="flex items-center gap-2">
-                              <Trash2 size={18} className="text-red-600" />
+                              <Trash2 size={18} className="text-red-600 dark:text-red-400" />
                               <span className="font-medium text-sm">Delete</span>
                             </div>
                             {expandedMenuSections.deleteSongs ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -3816,7 +3932,7 @@ const copyToClipboard = async () => {
                             return (
                               <>
                                 <div className="mb-2 px-2">
-                                  <h4 className="text-xs font-semibold text-gray-600 uppercase">Pinned Songs</h4>
+                                  <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase">Pinned Songs</h4>
                                 </div>
                                 <div className="space-y-2">
                                   {pinnedSongs.map(song => (
@@ -3831,18 +3947,18 @@ const copyToClipboard = async () => {
                                         handleDragEnd(e);
                                         e.currentTarget.style.opacity = '1';
                                       }}
-                                      className={`p-3 rounded-lg border cursor-pointer hover:bg-gray-50 ${currentSong?.id === song.id ? 'bg-blue-50 border-blue-300' : 'border-gray-200'} border-l-4 border-l-yellow-500`}
+                                      className={`p-3 rounded-lg border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${currentSong?.id === song.id ? 'bg-blue-50 dark:bg-blue-900 border-blue-300 dark:border-blue-700' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'} border-l-4 border-l-yellow-500 dark:border-l-yellow-400`}
                                       onClick={() => loadSong(song)}>
                                       <div className="flex items-start justify-between gap-2">
-                                        <div className="hidden lg:flex cursor-move text-gray-400 hover:text-gray-600 mt-1" title="Drag to reorder">
+                                        <div className="hidden lg:flex cursor-move text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 mt-1" title="Drag to reorder">
                                           <Menu size={16} />
                                         </div>
                                         <div className="flex-1">
-                                          <div className="font-medium text-sm flex items-center gap-2">
-                                            <span className="text-yellow-500">📌</span>
+                                          <div className="font-medium text-sm flex items-center gap-2 dark:text-white">
+                                            <span className="text-yellow-500 dark:text-yellow-400">📌</span>
                                             {song.title}
                                           </div>
-                                          <div className="text-xs text-gray-500 mt-1">
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                             {song.artist && song.artist !== 'Unknown Artist' && <span>{song.artist} • </span>}
                                             Key: {song.originalKey}
                                             {song.bpm && ` • ${song.bpm} BPM`}
@@ -3854,31 +3970,31 @@ const copyToClipboard = async () => {
                                           <div className="flex lg:hidden flex-col gap-1">
                                             <button 
                                               onClick={(e) => movePinnedSongUp(song.id, e)} 
-                                              className="text-gray-400 hover:text-blue-600 p-1"
+                                              className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 p-1"
                                               title="Move up"
                                             >
                                               ↑
                                             </button>
                                             <button 
                                               onClick={(e) => movePinnedSongDown(song.id, e)} 
-                                              className="text-gray-400 hover:text-blue-600 p-1"
+                                              className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 p-1"
                                               title="Move down"
                                             >
                                               ↓
                                             </button>
                                           </div>
-                                          <button onClick={(e) => togglePin(song.id, e)} className="text-gray-400 hover:text-yellow-500" title="Unpin">
+                                          <button onClick={(e) => togglePin(song.id, e)} className="text-gray-400 dark:text-gray-500 hover:text-yellow-500 dark:hover:text-yellow-400" title="Unpin">
                                             📌
                                           </button>
                                           {folders.length > 0 && (
-                                            <button onClick={(e) => { e.stopPropagation(); openMoveSongModal(song); }} className="text-gray-400 hover:text-blue-600" title="Add to folder">
+                                            <button onClick={(e) => { e.stopPropagation(); openMoveSongModal(song); }} className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400" title="Add to folder">
                                               <Folder size={14} />
                                             </button>
                                           )}
                                         </div>
                                       </div>
                                       <button onClick={(e) => { e.stopPropagation(); deleteSong(song.id); }}
-                                        className="mt-2 text-red-600 hover:text-red-700 text-xs flex items-center gap-1">
+                                        className="mt-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 text-xs flex items-center gap-1">
                                         <Trash2 size={12} />Delete
                                       </button>
                                     </div>
@@ -3891,11 +4007,11 @@ const copyToClipboard = async () => {
                       </div>
                     )}
                     
-                    {/* Collapsed menu - just icons */}
+                    {/* Collapsed menu - just icons (white in dark mode) */}
                     {menuCollapsed && (
                       <div className="flex-1 flex flex-col items-center py-4 gap-4">
-                        <button onClick={startNewSong} className="p-3 hover:bg-gray-100 rounded-lg" title="New Song">
-                          <Plus size={24} className="text-blue-600" />
+                        <button onClick={startNewSong} className="p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" title="New Song">
+                          <Plus size={24} className="text-blue-600 dark:text-gray-200" strokeWidth={2} />
                         </button>
                         <button 
                           onClick={() => {
@@ -3903,19 +4019,19 @@ const copyToClipboard = async () => {
                             setSelectedFolder('all'); // Go to All Songs
                             setExpandedMenuSections({...expandedMenuSections, songs: true}); // Expand Songs section
                           }} 
-                          className="p-3 hover:bg-gray-100 rounded-lg" 
+                          className="p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" 
                           title="All Songs"
                         >
-                          <Music size={24} className="text-blue-600" />
+                          <Music size={24} className="text-blue-600 dark:text-gray-200" strokeWidth={2} />
                         </button>
-                        <button onClick={exportAllSongs} className="p-3 hover:bg-gray-100 rounded-lg" title="Export">
-                          <Download size={24} className="text-green-600" />
+                        <button onClick={exportAllSongs} className="p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" title="Export">
+                          <Download size={24} className="text-green-600 dark:text-gray-200" strokeWidth={2} />
                         </button>
-                        <button onClick={() => setShowDeleteModal(true)} className="p-3 hover:bg-gray-100 rounded-lg" title="Delete">
-                          <Trash2 size={24} className="text-red-600" />
+                        <button onClick={() => setShowDeleteModal(true)} className="p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" title="Delete">
+                          <Trash2 size={24} className="text-red-600 dark:text-gray-200" strokeWidth={2} />
                         </button>
-                        <button onClick={() => setShowHelpModal(true)} className="p-3 hover:bg-gray-100 rounded-lg" title="Help & Info">
-                          <Info size={24} className="text-purple-600" />
+                        <button onClick={() => setShowHelpModal(true)} className="p-3 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg" title="Help & Info">
+                          <Info size={24} className="text-purple-600 dark:text-gray-200" strokeWidth={2} />
                         </button>
                       </div>
                     )}
@@ -3934,81 +4050,81 @@ const copyToClipboard = async () => {
                     )}
                     
                     {!currentSong && !showNewSong ? (
-                      <div className="flex-1 flex items-center justify-center text-gray-400">
+                      <div className="flex-1 flex items-center justify-center text-gray-400 dark:text-gray-500 bg-white dark:bg-gray-900">
                         <div className="text-center">
                           <Music size={64} className="mx-auto mb-4 opacity-50" />
                           <p className="text-lg">Select a song or create a new one</p>
                         </div>
                       </div>
                     ) : editMode ? (
-                      <div className="flex-1 overflow-y-auto p-8">
+                      <div className="flex-1 overflow-y-auto p-8 bg-white dark:bg-gray-900">
                         <div className="max-w-4xl mx-auto">
                           <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Title</label>
                             <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Song title" />
+                              className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Song title" />
                           </div>
                           
                           <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Artist (optional)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Artist (optional)</label>
                             <input type="text" value={artist} onChange={(e) => setArtist(e.target.value)}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                               placeholder="e.g., Elevation Worship, Hillsong (leave empty for Unknown Artist)" />
                           </div>
                           
                           <div className="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">Key (optional)</label>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Key (optional)</label>
                               <input type="text" value={songKey} onChange={(e) => setSongKey(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., C, Am, G" />
+                                className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., C, Am, G" />
                             </div>
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">BPM (optional)</label>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">BPM (optional)</label>
                               <input type="text" value={bpm} onChange={(e) => setBpm(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., 120" />
+                                className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., 120" />
                             </div>
                           </div>
                           
                           <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Time Signature (optional)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Time Signature (optional)</label>
                             <input type="text" value={timeSignature} onChange={(e) => setTimeSignature(e.target.value)}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., 4/4, 3/4, 6/8" />
+                              className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="e.g., 4/4, 3/4, 6/8" />
                           </div>
                           
                           <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">🎥 Video Embed (YouTube, etc.) - Optional</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">🎥 Video Embed (YouTube, etc.) - Optional</label>
                             <input type="text" value={videoEmbedUrl} onChange={(e) => setVideoEmbedUrl(e.target.value)}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                               placeholder="Paste YouTube link or iframe code (e.g., https://youtu.be/...)" />
-                            <p className="text-xs text-gray-500 mt-1">💡 For visual reference while practicing</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 For visual reference while practicing</p>
                           </div>
                           
                           <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">🎵 Audio Embed (Spotify, Apple Music, etc.) - Optional</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">🎵 Audio Embed (Spotify, Apple Music, etc.) - Optional</label>
                             <input type="text" value={audioEmbedUrl} onChange={(e) => setAudioEmbedUrl(e.target.value)}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
+                              className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" 
                               placeholder="Paste Spotify link or iframe code (e.g., https://open.spotify.com/track/...)" />
-                            <p className="text-xs text-gray-500 mt-1">💡 For audio-only practice (no ads on Spotify with login)</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">💡 For audio-only practice (no ads on Spotify with login)</p>
                           </div>
                           
-                          <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                             <p className="text-xs text-blue-800 mb-2">
                               <strong>💡 Tip:</strong> Add both video and audio! You can toggle between them while practicing. Video shows the performance, audio is great for focused practice without distractions.
                             </p>
-                            <p className="text-xs text-yellow-700 bg-yellow-50 p-2 rounded border border-yellow-200">
+                            <p className="text-xs text-yellow-700 dark:text-yellow-200 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border border-yellow-200 dark:border-yellow-800">
                               <strong>📌 Note:</strong> YouTube videos work best when ToneBook is deployed on GitHub Pages or a web server. When running locally (file://), some videos may be restricted. Use the "Open in YouTube" link as fallback.
                             </p>
                           </div>
                           
                           <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Lyrics & Chords (use [Am] for chords, [Intro] [Verse 1] for sections)</label>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">Lyrics & Chords (use [Am] for chords, [Intro] [Verse 1] for sections)</label>
                             <div className="mb-2">
                               <button onClick={() => setShowImportModal(true)} className="text-sm bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700">
                                 Import from Text
                               </button>
                             </div>
                             <textarea value={content} onChange={(e) => setContent(e.target.value)}
-                              className="w-full h-96 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
+                              className="w-full h-96 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono"
                               placeholder="Example:&#10;[Intro]&#10;[C]Hello [G]world&#10;&#10;[Verse 1]&#10;This is my [Am]song [F]today" />
                           </div>
                           
@@ -4036,11 +4152,11 @@ const copyToClipboard = async () => {
                       </div>
                     ) : (
                       <>
-                        <div className="bg-white border-b border-gray-200 p-4">
+                        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
                           <div className="max-w-4xl mx-auto flex items-center justify-between performance-header-mobile">
                             <div className="song-info-mobile">
-                              <h2 className="text-2xl font-bold">{currentSong.title}</h2>
-                              <div className="text-sm text-gray-600 mt-1">
+                              <h2 className="text-2xl font-bold dark:text-white">{currentSong.title}</h2>
+                              <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                                 {currentSong.artist && currentSong.artist !== 'Unknown Artist' && <span className="font-medium">{currentSong.artist} • </span>}
                                 {transposition !== 0 ? (<span>Original: {currentSong.originalKey}, Current: {getCurrentKey()}</span>) : 
                                  (<span>Key: {currentSong.originalKey}</span>)}
@@ -4049,7 +4165,7 @@ const copyToClipboard = async () => {
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <button onClick={startEdit} className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                              <button onClick={startEdit} className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                                 <Edit size={20} />Edit
                               </button>
                               <button onClick={() => setViewMode(true)} className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
@@ -4059,16 +4175,16 @@ const copyToClipboard = async () => {
                           </div>
                         </div>
 
-                        <div className="bg-gray-100 border-b border-gray-200 p-4">
+                        <div className="bg-gray-100 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
                           <div className="max-w-4xl mx-auto flex items-center justify-between flex-wrap gap-4">
                             <div className="flex items-center gap-4 transpose-control">
-                              <span className="text-sm font-medium text-gray-700">Transpose:</span>
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Transpose:</span>
                               <div className="flex items-center gap-2">
-                                <button onClick={() => setTransposition(t => t - 1)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">-</button>
-                                <span className="w-16 text-center font-medium">{transposition > 0 ? '+' : ''}{transposition}</span>
-                                <button onClick={() => setTransposition(t => t + 1)} className="w-10 h-10 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 font-bold">+</button>
+                                <button onClick={() => setTransposition(t => t - 1)} className="w-10 h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-bold dark:text-white">-</button>
+                                <span className="w-16 text-center font-medium dark:text-white">{transposition > 0 ? '+' : ''}{transposition}</span>
+                                <button onClick={() => setTransposition(t => t + 1)} className="w-10 h-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 font-bold dark:text-white">+</button>
                                 {transposition !== 0 && (
-                                  <button onClick={() => setTransposition(0)} className="ml-2 px-3 py-1 text-sm bg-gray-300 text-gray-700 rounded hover:bg-gray-400">Reset</button>
+                                  <button onClick={() => setTransposition(0)} className="ml-2 px-3 py-1 text-sm bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-white rounded hover:bg-gray-400 dark:hover:bg-gray-500">Reset</button>
                                 )}
                               </div>
                             </div>
@@ -4087,17 +4203,17 @@ const copyToClipboard = async () => {
                           </div>
                         </div>
 
-                        <div className={`flex-1 overflow-y-auto p-8 bg-white ${(currentSong.videoEmbedUrl || currentSong.audioEmbedUrl) ? 'flex gap-6' : ''}`}>
+                        <div className={`flex-1 overflow-y-auto p-8 bg-white dark:bg-gray-900 ${(currentSong.videoEmbedUrl || currentSong.audioEmbedUrl) ? 'flex gap-6' : ''}`}>
                           {/* Song content */}
-                          <div className={`font-mono whitespace-pre-wrap ${(currentSong.videoEmbedUrl || currentSong.audioEmbedUrl) ? 'flex-1' : 'max-w-4xl mx-auto'}`}>
+                          <div className={`font-mono whitespace-pre-wrap dark:text-white ${(currentSong.videoEmbedUrl || currentSong.audioEmbedUrl) ? 'flex-1' : 'max-w-4xl mx-auto'}`}>
                             {formatContent(filterMeasureLines(currentSong.content), transposition).map((line, i) => (
-                              <div key={i} className={line.isComment ? "leading-relaxed text-gray-500 text-sm italic" : "leading-relaxed"}>
+                              <div key={i} className={line.isComment ? "leading-relaxed text-gray-500 dark:text-gray-400 text-sm italic" : "leading-relaxed"}>
                                 {line.isEmpty ? (<br />) : (
                                   line.parts.map((part, j) => (
                                     <span key={j} className={
-                                      part.type === 'comment' ? 'text-gray-500 text-sm italic' :
-                                      part.type === 'chord' ? 'font-bold text-black' : 
-                                      part.type === 'section' ? 'block text-xl font-bold text-blue-700 mt-4 mb-2' : ''
+                                      part.type === 'comment' ? 'text-gray-500 dark:text-gray-400 text-sm italic' :
+                                      part.type === 'chord' ? 'font-bold text-black dark:text-blue-400' : 
+                                      part.type === 'section' ? 'block text-xl font-bold text-blue-700 dark:text-blue-400 mt-4 mb-2' : ''
                                     }>
                                       {part.content}
                                     </span>
@@ -4119,7 +4235,7 @@ const copyToClipboard = async () => {
                                       className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                                         embedPreference === 'video'
                                           ? 'bg-blue-600 text-white'
-                                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 dark:border-gray-600'
                                       }`}
                                     >
                                       <span>🎥</span>
@@ -4130,7 +4246,7 @@ const copyToClipboard = async () => {
                                       className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                                         embedPreference === 'audio'
                                           ? 'bg-blue-600 text-white'
-                                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                                          : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 dark:border-gray-600'
                                       }`}
                                     >
                                       <span>🎵</span>
@@ -4193,7 +4309,7 @@ const copyToClipboard = async () => {
                                 })()}
                                 
                                 {/* Help text */}
-                                <p className="text-xs text-gray-500 mt-2">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                                   {currentSong.videoEmbedUrl && currentSong.audioEmbedUrl 
                                     ? '💡 Toggle between video and audio • Scroll song while player stays fixed'
                                     : '💡 Scroll the song while player stays fixed'}
